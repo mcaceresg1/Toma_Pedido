@@ -1,0 +1,246 @@
+<div
+  class="pb-12 px-4 md:px-4 bg-neutral-100 w-full h-full overflow-x-hidden overflow-y-auto"
+>
+  <!-- <button
+    mat-fab
+    aria-label="Botón flotante"
+    [routerLink]="['/dashboard/pages/addpedido']"
+    class="!hidden md:!block !fixed bottom-6 right-6 !z-50 !bg-purple-600 !text-white"
+  >
+    <mat-icon>add</mat-icon>
+  </button> -->
+  <div class="!fixed bottom-3 right-3 !z-50">
+    <div class="flex items-center justify-center p-3 relative">
+      <button
+        id="mainfab"
+        mat-fab
+        extended
+        aria-label="Botón flotante"
+        [routerLink]="['/dashboard/pages/addpedido']"
+        class="!bg-purple-600 !text-white z-50"
+      >
+        <mat-icon>add</mat-icon>
+        Nuevo pedido
+      </button>
+      <div
+        class="absolute w-1/2 h-1/2 bg-purple-500 animate-ping rounded-lg"
+      ></div>
+    </div>
+  </div>
+  <div
+    class="flex flex-col md:flex-row my-4 bg-white rounded-md shadow overflow-hidden"
+  >
+    <mat-toolbar class="!w-fit !bg-white">
+      <span>Mis Pedidos</span>
+    </mat-toolbar>
+    <div
+      class="md:flex-1 flex flex-col md:justify-center md:items-end px-4 pb-2 md:pb-0"
+    >
+      <nav class="flex" aria-label="Breadcrumb">
+        <ol
+          class="inline-flex items-center space-x-1 md:space-x-2 rtl:space-x-reverse"
+        >
+          <li class="inline-flex items-center">
+            <a
+              href="javascript:void(0);"
+              class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-purple-600 dark:text-gray-400 dark:hover:text-white no-underline"
+            >
+              <mat-icon>home</mat-icon>
+              Home
+            </a>
+          </li>
+          <li>
+            <div class="flex items-center">
+              <mat-icon class="text-gray-400">chevron_right</mat-icon>
+              <a
+                href="javascript:void(0);"
+                class="ms-1 text-sm font-medium text-gray-700 hover:text-purple-600 md:ms-2 dark:text-gray-400 dark:hover:text-white no-underline"
+                >Ventas</a
+              >
+            </div>
+          </li>
+          <li aria-current="page">
+            <div class="flex items-center">
+              <mat-icon class="text-gray-400">chevron_right</mat-icon>
+              <span
+                class="ms-1 text-sm font-medium text-gray-500 md:ms-2 dark:text-gray-400"
+                >Lista de Pedidos</span
+              >
+            </div>
+          </li>
+        </ol>
+      </nav>
+    </div>
+  </div>
+
+  <div
+    class="mt-3 flex flex-col gap-3 bg-white rounded-md shadow overflow-hidden px-2 py-4 md:p-4"
+  >
+    <div class="w-full">
+      <form
+        [formGroup]="formBuscar"
+        autocomplete="off"
+        class="!p-0 !w-full grid grid-cols-2 lg:grid-cols-4 gap-x-2 md:gap-2"
+      >
+        <div class="col-span-2 lg:col-span-4 mb-2 md:mb-0">
+          <mat-label>Filtros</mat-label>
+        </div>
+        <mat-form-field class="!p-0 !w-full col-span-2" appearance="outline">
+          <mat-label>Por N° PEDIDO, RUC o CLIENTE</mat-label>
+          <input
+            matInput
+            formControlName="inputBuscar"
+            placeholder="Buscar por N° PEDIDO, RUC o CLIENTE"
+            (change)="cargarInput($event)"
+            (input)="cargarInput($event)"
+            type="search"
+          />
+          <mat-spinner
+            matPrefix
+            strokeWidth="4"
+            class="!w-12 !h-6"
+            *ngIf="!searchSpinnerHidden()"
+          ></mat-spinner>
+
+          <mat-icon matIconSuffix>search</mat-icon>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="col-span-1">
+          <mat-label>Por rango de Fecha</mat-label>
+          <mat-date-range-input [formGroup]="range" [rangePicker]="picker">
+            <input
+              (click)="picker.open()"
+              matStartDate
+              formControlName="start"
+              (dateChange)="filtrarPorRango($event)"
+              placeholder="Desde"
+            />
+            <input
+              (click)="picker.open()"
+              matEndDate
+              formControlName="end"
+              (dateChange)="filtrarPorRango($event)"
+              placeholder="Hasta"
+            />
+          </mat-date-range-input>
+          <mat-datepicker-toggle
+            matIconSuffix
+            [for]="picker"
+          ></mat-datepicker-toggle>
+          <mat-date-range-picker #picker></mat-date-range-picker>
+
+          @if (range.controls.start.hasError('matStartDateInvalid')) {
+          <mat-error>Fecha de inicio inválida</mat-error>
+          } @if (range.controls.end.hasError('matEndDateInvalid')) {
+          <mat-error>Fecha final inválida</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="col-span-1">
+          <mat-label>Por estado</mat-label>
+          <mat-select
+            [(value)]="typeFilter"
+            (selectionChange)="filtrarPorEstado()"
+          >
+            <mat-option>Sin filtro</mat-option>
+            <mat-option value="P">Por Despachar</mat-option>
+            <mat-option value="D">Despachado </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </form>
+    </div>
+    <div
+      class="w-full grid grid-cols-1 md:grid-cols-2 gap-3"
+      *ngIf="allPedidosList.length > 0"
+    >
+      <div *ngFor="let item of allPedidosList" (click)="onCardClicked(item)">
+        <mat-card appearance="raised">
+          <mat-card-header class="!w-full flex flex-row text-neutral-500">
+            <div mat-card-avatar>
+              <mat-icon>description</mat-icon>
+            </div>
+            <div class="flex flex-row w-full justify-between">
+              <p class="text-md poppins-semibold text-neutral-800">
+                {{ item.numPedido }}
+              </p>
+              <p class="text-xs poppins-regular text-neutral-800">
+                {{ item.fechaPedido }}
+              </p>
+            </div>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="flex flex-col gap-1">
+              <p class="text-sm poppins-regular">
+                {{ item.rucCliente }} - {{ item.desCliente }}
+              </p>
+              <p class="text-sm poppins-regular">
+                {{ item.dirCliente ? item.dirCliente : "Sin dirección" }}
+              </p>
+            </div>
+            <div class="flex flex-row justify-between text-sm mt-2 flex-wrap">
+              <!-- <p class="poppins-regular">
+                <b class="poppins-semibold">Sub Total: </b>
+                {{ item.subtotal | number : "1.2-2" }} {{ item.moneda }}
+              </p>
+              <p class="poppins-regular">
+                <b class="poppins-semibold">Igv: </b>
+                {{ item.igv | number : "1.2-2" }} {{ item.moneda }}
+              </p> -->
+              <p class="poppins-regular">
+                <b class="poppins-semibold">Tot: </b>
+                {{ item.total | number : "1.2-2" }} {{ item.moneda }}
+              </p>
+              <p *ngIf="item.estado === 'F'">
+                <b class="poppins-semibold">Factura: </b>{{ item.factura }}
+              </p>
+              <p *ngIf="item.estado === 'F' && !!item.ordenCompra">
+                <b class="poppins-semibold">OC: </b>{{ item.ordenCompra }}
+              </p>
+            </div>
+            <div
+              [ngClass]="{
+                'text-xs poppins-semibold uppercase place-self-end mt-2 px-2 py-1 rounded text-white': true,
+                'bg-blue-400': item.estado === ' ' || item.estado === 'P',
+                'bg-green-500': item.estado === 'D'
+              }"
+            >
+              {{ item.estado === "D" ? "DESPACHADO" : "POR DESPACHAR" }}
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <div
+      class="flex flex-col md:flex-row md:justify-between md:items-center gap-2"
+    >
+      <span class="poppins-regular text-sm"
+        >Total Registros: {{ totalRecords }}</span
+      >
+      <mat-paginator
+        #paginator
+        (page)="handlePageChange($event)"
+        [length]="totalRecords"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="[10, 20, 50, 100]"
+        [pageIndex]="paginatorIndex"
+        class="!bg-white"
+      >
+      </mat-paginator>
+    </div>
+
+    <div
+      class="w-full min-h-32 flex flex-col items-center justify-center content-center justify-items-center h-full"
+      *ngIf="allPedidosList.length == 0"
+    >
+      <div class="flex flex-col items-center justify-center">
+        <p class="pt-1 poppins-regular px-2 text-center">
+          No se encontraron registros para mostrar
+        </p>
+        <span class="text-neutral-500 pt-2 !relative"
+          ><mat-icon class="!text-6xl !overflow-visible !relative !w-fit !h-fit"
+            >production_quantity_limits</mat-icon
+          >
+        </span>
+      </div>
+    </div>
+  </div>
+</div>

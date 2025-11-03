@@ -1,0 +1,271 @@
+<mat-sidenav-container class="w-screen h-screen overflow-hidden">
+  <mat-sidenav
+    #sidenav
+    [mode]="isSmallScreen ? 'over' : 'side'"
+    [(opened)]="opened"
+    class="!max-w-56 !p-0 !px-0"
+    style="background-color: #190627"
+  >
+    <nav class="w-full h-full flex flex-col">
+      <div class="w-full flex flex-row items-start justify-center">
+        <div class="flex-1 flex items-center justify-center pt-8 relative">
+          <img
+            class="max-w-32 flex-1"
+            src="/assets/images/Logo_nexwork_ERP_WHITE.png"
+            alt="login"
+            width="100%"
+          />
+          <button
+            mat-icon-button
+            (click)="toggleDrawer()"
+            class="text-xl !text-white !absolute top-3 right-2"
+          >
+            <mat-icon>{{ opened ? "arrow_back" : "menu" }}</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <div class="w-full">
+        <div class="pt-4 pl-3 flex flex-col w-full">
+          <!-- INICIO -->
+          <div class="w-full flex flex-col justify-start items-start">
+            <button
+              mat-button
+              class="!text-neutral-400"
+              [routerLink]="['/home']"
+              routerLinkActive="active"
+              *ngIf="getPermisos('Ventas')"
+            >
+              <mat-icon>home</mat-icon>Home
+            </button>
+
+            <!-- <button mat-button [routerLink]="['/dashboard/pages/ventas']" routerLinkActive="active"
+              *ngIf="getPermisos('Ventas')" class="!text-neutral-400">
+              <mat-icon>real_estate_agent</mat-icon>Ventas
+            </button> -->
+
+            <!-- VENTAS CON SUBMENÚ -->
+            <button
+              mat-button
+              [matMenuTriggerFor]="ventasMenu"
+              *ngIf="getPermisos('Ventas')"
+              class="!text-neutral-400"
+            >
+              <mat-icon>real_estate_agent</mat-icon>
+              <div class="flex flex-row items-center !text-neutral-400">
+                Ventas
+                <mat-icon class="ml-3 text-neutral-400"
+                  >keyboard_arrow_down</mat-icon
+                >
+              </div>
+            </button>
+
+            <mat-menu #ventasMenu="matMenu">
+              <button
+                mat-menu-item
+                (click)="navegarA('/dashboard/pages/addpedido')"
+                *ngIf="getPermisos('Ventas')"
+                class="!text-neutral-800"
+              >
+                Registro Pedido
+              </button>
+              <button
+                mat-menu-item
+                (click)="navegarA('/dashboard/pages/ordenPedidos')"
+                *ngIf="getPermisos('Ventas')"
+                class="!text-neutral-800"
+              >
+                Reporte Pedidos
+              </button>
+            </mat-menu>
+
+            <!-- COMPRAS -->
+            <button
+              mat-button
+              [matMenuTriggerFor]="menu"
+              *ngIf="getPermisos('Resportes')"
+              class="!text-neutral-400"
+            >
+              <mat-icon>bar_chart</mat-icon>
+
+              <div class="flex flex-row items-center !text-neutral-400">
+                Compras<mat-icon class="ml-3 text-neutral-400"
+                  >keyboard_arrow_down</mat-icon
+                >
+              </div>
+            </button>
+            <mat-menu #menu="matMenu">
+              <button
+                mat-menu-item
+                [routerLink]="['/dashboard/pages/reporteProductos']"
+                routerLinkActive="active"
+                *ngIf="getPermisos('Reportes')"
+                class="!text-neutral-800"
+              >
+                Reporte Productos
+              </button>
+              <button
+                mat-menu-item
+                [routerLink]="['/dashboard/pages/reporteProveedor']"
+                routerLinkActive="active"
+                *ngIf="getPermisos('Reportes')"
+                class="!text-neutral-800"
+              >
+                Reporte Proveedor
+              </button>
+            </mat-menu>
+            <!-- 
+            <button
+              mat-button
+              [routerLink]="['/dashboard/pages/clientes']"
+              routerLinkActive="active"
+              *ngIf="getPermisos('Clientes')"
+              class="!text-neutral-400"
+            >
+              <mat-icon>add_business</mat-icon>Clientes
+            </button> -->
+
+            <!-- <button
+              mat-button
+              [matMenuTriggerFor]="menu"
+              *ngIf="getPermisos('GestionVentas')"
+              class="!text-neutral-400"
+            >
+              <mat-icon>real_estate_agent</mat-icon>
+
+              <div class="flex flex-row items-center !text-neutral-400">
+                Reportes<mat-icon class="ml-3 text-neutral-400"
+                  >keyboard_arrow_down</mat-icon
+                >
+              </div>
+            </button>
+            <mat-menu #menu="matMenu">
+              <button
+                mat-menu-item
+                [routerLink]="['/dashboard/reportes/gestionVentas']"
+                routerLinkActive="active"
+                *ngIf="getPermisos('GestionVentas')"
+                class="!text-neutral-800"
+              >
+                Gestión de Ventas
+              </button>
+            </mat-menu> -->
+          </div>
+
+          <!-- REPORTES -->
+        </div>
+      </div>
+      <div class="mt-auto">
+        <div class="flex flex-col px-4 py-2 flex-wrap">
+          <span class="poppins-regular text-neutral-400">Conexión:</span>
+          <span class="text-neutral-500 text-sm">{{
+            connectionDetails()
+          }}</span>
+        </div>
+        <div class="bg-black bg-opacity-50 px-4 py-3 text-neutral-500">
+          <div class="text-sm">Copyright © Nexwork ERP</div>
+        </div>
+      </div>
+    </nav>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="!bg-white">
+    <section class="w-full h-full flex flex-col">
+      <mat-toolbar class="shadow z-50">
+        <button
+          [hidden]="opened"
+          mat-icon-button
+          (click)="toggleDrawer()"
+          class="text-xl"
+        >
+          <mat-icon>{{ opened ? "close" : "menu" }}</mat-icon>
+        </button>
+        <div class="flex-1"></div>
+        <div>
+          <button
+            mat-button
+            [matMenuTriggerFor]="options"
+            class="!h-12 !relative !w-fit !p-0 !px-2"
+          >
+            <div class="flex flex-row items-center justify-center gap-2">
+              <div class="flex flex-col justify-start items-start">
+                <span class="leading-none font-semibold">Usuario</span>
+                <span class="leading-none">{{ usuario()?.alias }}</span>
+              </div>
+              <div
+                class="top-0 left-0 !w-10 !aspect-square object-cover rounded-full overflow-hidden"
+              >
+                <img
+                  class="w-full h-full object-contain"
+                  [src]="logoEmpresa()"
+                />
+              </div>
+              <div class="flex flex-col justify-start items-start">
+                <span class="ml-2 text-sm">{{ usuario()?.nombreUsuario }}</span>
+                <span class="ml-2 text-xs">{{ empresa()?.nombre }}</span>
+              </div>
+              <mat-icon>arrow_drop_down</mat-icon>
+            </div>
+          </button>
+
+          <mat-menu #options>
+            <button
+              mat-menu-item
+              *ngFor="let item of userEmpresas()"
+              (click)="cambiarEmpresa(item.codigo)"
+            >
+              <mat-icon>
+                <div
+                  class="top-0 left-0 !w-full !aspect-square object-cover rounded-full overflow-hidden"
+                >
+                  <img class="w-full h-full object-contain" [src]="item.logo" />
+                </div>
+              </mat-icon>
+              {{ item.nombre }}
+            </button>
+            <button mat-menu-item (click)="logout()">
+              <mat-icon>logout</mat-icon>Cerrar Sesión
+            </button>
+          </mat-menu>
+        </div>
+      </mat-toolbar>
+
+      <div class="overflow-hidden w-full flex-1">
+        <div class="w-full h-full overflow-x-hidden overflow-y-auto">
+          <router-outlet></router-outlet>
+        </div>
+      </div>
+    </section>
+  </mat-sidenav-content>
+</mat-sidenav-container>
+<ngx-spinner
+  bdColor="rgba(51,51,51,0.8)"
+  size="medium"
+  color="#fff"
+  type="ball-scale-multiple"
+  name="usuario"
+>
+  <p style="font-size: 20px; color: white">
+    Cargando información del usuario...
+  </p>
+</ngx-spinner>
+<ngx-spinner
+  bdColor="rgba(51,51,51,0.8)"
+  size="medium"
+  color="#fff"
+  type="ball-scale-multiple"
+  name="empresa"
+>
+  <p style="font-size: 20px; color: white">
+    Cargando información de la empresa...
+  </p>
+</ngx-spinner>
+<ngx-spinner
+  bdColor="rgba(51,51,51,0.8)"
+  size="medium"
+  color="#fff"
+  type="ball-scale-multiple"
+  name="empresa"
+>
+  <p style="font-size: 20px; color: white">Cargando lista de empresas...</p>
+</ngx-spinner>

@@ -1,0 +1,386 @@
+<div
+  class="pb-36 md:pb-12 px-4 md:px-4 bg-neutral-100 w-full h-full overflow-x-hidden overflow-y-auto !relative"
+>
+  <div
+    class="flex flex-col md:flex-row my-4 bg-white rounded-md shadow overflow-hidden"
+  >
+    <mat-toolbar class="!w-fit !bg-white">
+      <button mat-icon-button (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <span>Nuevo Pedido</span>
+    </mat-toolbar>
+    <div
+      class="md:flex-1 flex flex-col md:justify-center md:items-end px-4 pb-2 md:pb-0"
+    >
+      <nav class="flex" aria-label="Breadcrumb">
+        <ol
+          class="inline-flex items-center space-x-1 md:space-x-2 rtl:space-x-reverse"
+        >
+          <li class="inline-flex items-center">
+            <a
+              [routerLink]="['/dashboard/pages/ventas']"
+              class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-purple-600 dark:text-gray-400 dark:hover:text-white no-underline"
+            >
+              <mat-icon>home</mat-icon>
+              Home
+            </a>
+          </li>
+          <li>
+            <div class="flex items-center">
+              <mat-icon class="text-gray-400">chevron_right</mat-icon>
+              <a
+                [routerLink]="['/dashboard/pages/ventas']"
+                class="ms-1 text-sm font-medium text-gray-700 hover:text-purple-600 md:ms-2 dark:text-gray-400 dark:hover:text-white no-underline"
+                >Ventas</a
+              >
+            </div>
+          </li>
+          <li aria-current="page">
+            <div class="flex items-center">
+              <mat-icon class="text-gray-400">chevron_right</mat-icon>
+              <span
+                class="ms-1 text-sm font-medium text-gray-500 md:ms-2 dark:text-gray-400"
+                >Nuevo Pedido</span
+              >
+            </div>
+          </li>
+        </ol>
+      </nav>
+    </div>
+  </div>
+
+  <div
+    class="mt-3 flex flex-col gap-3 bg-white rounded-md shadow overflow-hidden px-2 py-4 md:p-4"
+  >
+    <div class="flex-row justify-end w-full gap-2 hidden md:flex" role="group">
+      <button
+        mat-flat-button
+        type="button"
+        (click)="registrarPedido()"
+        class="!bg-green-300 !text-neutral-800"
+      >
+        <mat-icon>save</mat-icon>
+        Guardar
+      </button>
+      <button
+        mat-flat-button
+        class="!bg-red-300 !text-neutral-800"
+        type="button"
+        (click)="cancelarPedido()"
+      >
+        <mat-icon>cancel</mat-icon>
+        Cancelar
+      </button>
+    </div>
+
+    <form class="mb-3" [formGroup]="formPedido" autocomplete="off">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
+        <!-- search.component.html -->
+        <div
+          class="col-span-2 lg:col-span-4 flex flex-col justify-end items-end"
+        >
+          <div class="flex flex-col w-full justify-end">
+            <label class="text-xs">Cliente</label>
+            <ng-select
+              [(ngModel)]="rucCliente"
+              (search)="onSearch($event)"
+              (change)="onClienteChanged()"
+              formControlName="cliente"
+              placeholder="Buscar por RUC o Descripción"
+              [class.is-invalid]="clienteInvalid"
+              [clearable]="false"
+            >
+              <ng-option
+                *ngFor="let option of listClientes"
+                [value]="option.rucCliente"
+                >{{ option.valueSelect }}</ng-option
+              >
+            </ng-select>
+            <small *ngIf="clienteInvalid" class="text-red-600"
+              >Seleccione cliente</small
+            >
+          </div>
+          <button
+            id="mainfab"
+            mat-button
+            extended
+            aria-label="Botón flotante"
+            (click)="goCrearCliente()"
+          >
+            <mat-icon>add</mat-icon>
+            Nuevo Cliente
+          </button>
+        </div>
+
+        <div
+          [ngClass]="{
+            'md:h-full flex flex-col justify-end': true,
+            'col-span-2 lg:col-span-4': !listPreciosVisible(),
+            'col-span-1 lg:col-span-2': listPreciosVisible()
+          }"
+        >
+          <mat-form-field appearance="outline" class="!w-full">
+            <mat-label>Moneda</mat-label>
+            <mat-select
+              formControlName="moneda"
+              [class.is-invalid]="monedaInvalid"
+              placeholder="Seleccione"
+              (selectionChange)="monedaSelected()"
+            >
+              <mat-option *ngFor="let item of listMoneda" [value]="item.id">
+                {{ item.abr }}
+              </mat-option>
+            </mat-select>
+
+            <mat-hint *ngIf="monedaInvalid" class="text-red-600"
+              >Seleccione moneda</mat-hint
+            >
+          </mat-form-field>
+        </div>
+
+        <div
+          class="md:h-full col-span-1 lg:col-span-2 flex flex-col justify-end"
+          *ngIf="listPreciosVisible()"
+        >
+          <mat-form-field appearance="outline">
+            <mat-label>Lista de precios</mat-label>
+            <mat-select
+              matNativeControl
+              required
+              formControlName="listaPrecios"
+              [class.is-invalid]="lPreciosInvalid"
+              placeholder="Seleccione"
+            >
+              <mat-option value="">Seleccione</mat-option>
+              <mat-option *ngFor="let item of listPrecios" [value]="item.value">
+                {{ item.name }}
+              </mat-option>
+            </mat-select>
+
+            <mat-hint *ngIf="lPreciosInvalid" class="text-red-600"
+              >Seleccione lista de precios</mat-hint
+            >
+          </mat-form-field>
+        </div>
+        <div *ngIf="listProdAgregados.length > 0">
+          <button mat-flat-button (click)="openAddItemDialog()">
+            <mat-icon>add</mat-icon> Agregar Producto
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 py-2 gap-2">
+        <div class="col-span-1 lg:col-span-2 rounded-lg bg-neutral-100">
+          <div
+            *ngIf="listProdAgregados.length > 0"
+            class="max-h-96 overflow-y-scroll flex flex-col gap-2 py-2"
+          >
+            <mat-card
+              *ngFor="let item of listProdAgregados"
+              appearance="raised"
+              class="!mx-2 !p-0 !bg-white !overflow-hidden"
+            >
+              <div class="flex flex-row gap-2 md:gap-4">
+                <div
+                  class="flex flex-col flex-1 flex-wrap px-2 py-4 md:px-4 md:py-6"
+                >
+                  <div class="flex flex-col gap-2">
+                    <div>
+                      <p>
+                        <span class="poppins-semibold text-xs">{{
+                          item.codProducto
+                        }}</span>
+                        -
+                        <span class="poppins-regular text-xs">{{
+                          item.descProducto
+                        }}</span>
+                      </p>
+                    </div>
+                    <div class="flex flex-row justify-between flex-wrap">
+                      <p class="text-xs">
+                        <label
+                          ><b class="poppins-semibold text-neutral-600"
+                            >Cantidad:</b
+                          >&nbsp;</label
+                        >
+                        <span>{{ item.cantidad }}</span>
+                      </p>
+                      <p class="text-xs">
+                        <label
+                          ><b class="poppins-semibold text-neutral-600"
+                            >P.Unit.:</b
+                          >&nbsp;</label
+                        >
+                        <span>{{
+                          item.importe / item.cantidad | currency : "PEN"
+                        }}</span>
+                      </p>
+                      <p class="text-xs">
+                        <label
+                          ><b class="poppins-semibold text-neutral-600"
+                            >Importe:</b
+                          >&nbsp;</label
+                        >
+                        <span>{{ item.importe | currency : "PEN" }}</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div
+                  class="flex bg-red-500 px-2 md:px-8 items-center justify-center cursor-pointer"
+                  (click)="deleteItem(item.codProducto)"
+                >
+                  <mat-icon class="!text-white">delete</mat-icon>
+                </div>
+              </div>
+            </mat-card>
+          </div>
+
+          <div
+            class="w-full h-full min-h-32 flex flex-col items-center justify-center content-center justify-items-center pb-8 pt-4"
+            *ngIf="listProdAgregados.length == 0"
+          >
+            <div
+              class="flex flex-col items-center justify-center cursor-pointer"
+              (click)="openAddItemDialog()"
+            >
+              <p class="pt-1 poppins-regular px-2 text-center">
+                Agregue productos al pedido
+              </p>
+              <div class="flex relative p-2 overflow-hidden">
+                <div
+                  class="text-white rounded-full !relative bg-purple-500 p-3 flex items-center justify-center z-50"
+                >
+                  <mat-icon class="!text-5xl !overflow-visible !w-fit !h-fit"
+                    >add_shopping_cart</mat-icon
+                  >
+                </div>
+
+                <div
+                  class="absolute inset-0 w-full h-full bg-purple-500 bg-opacity-35 animate-pulse rounded-full"
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="rounded-lg border-2 flex-col divide-solid divide-y divide-x-0 divide-neutral-300 hidden md:flex bg-neutral-100"
+        >
+          <div class="text-center py-4">
+            <p class="text-sm poppins-semibold">Subtotal</p>
+            <p>
+              {{ moneda }}
+              {{ calcularSubtotal() | number : "1.2-2" }}
+            </p>
+          </div>
+          <div class="text-center py-4">
+            <p class="text-sm poppins-semibold">Igv</p>
+
+            <p>
+              {{ moneda }}
+              {{ calcularIgv() | number : "1.2-2" }}
+            </p>
+          </div>
+          <div class="text-center py-4">
+            <p class="text-sm poppins-semibold">Total</p>
+            <p>{{ moneda }} {{ total | number : "1.2-2" }}</p>
+          </div>
+        </div>
+        <mat-form-field
+          appearance="outline"
+          class="!w-full col-span-1 lg:col-span-2 !h-fit"
+        >
+          <mat-label>Observaciones</mat-label>
+          <textarea
+            matInput
+            placeholder="Observaciones"
+            rows="2"
+            formControlName="observaciones"
+          ></textarea>
+        </mat-form-field>
+        <mat-form-field class="!w-full !h-fit" appearance="outline">
+          <mat-label>Número de OC (Opcional)</mat-label>
+          <input
+            matInput
+            placeholder="Número de OC"
+            value=""
+            formControlName="oc"
+          />
+        </mat-form-field>
+      </div>
+    </form>
+  </div>
+  <div
+    class="!rounded-none !rounded-tl-lg !rounded-tr-lg !z-40 flex-col py-4 px-2 gap-2 flex md:hidden !fixed bottom-0 left-0 right-0 bg-white"
+    style="
+      -webkit-box-shadow: -1px -17px 26px -12px rgba(0, 0, 0, 0.22);
+      -moz-box-shadow: -1px -17px 26px -12px rgba(0, 0, 0, 0.22);
+      box-shadow: -1px -17px 26px -12px rgba(0, 0, 0, 0.22);
+    "
+  >
+    <div
+      class="flex flex-row w-full justify-evenly items-center gap-3 flex-wrap"
+    >
+      <div class="text-center py-4">
+        <p class="text-sm poppins-semibold">Subtotal</p>
+        <p>
+          {{ moneda }}
+          {{ calcularSubtotal() | number : "1.2-2" }}
+        </p>
+      </div>
+      <!-- <div class="text-center py-4">
+        <p class="text-sm poppins-semibold">Igv</p>
+
+        <p>{{ moneda }} {{ calcularIgv() | number : "1.2-2" }}</p>
+      </div> -->
+      <div class="text-center py-4">
+        <p class="text-sm poppins-semibold">Total</p>
+        <p>{{ moneda }} {{ total | number : "1.2-2" }}</p>
+      </div>
+    </div>
+    <div
+      class="flex-row justify-evenly w-full gap-2 flex md:hidden"
+      role="group"
+    >
+      <button
+        mat-flat-button
+        type="button"
+        class="!w-full !bg-opacity-50 !bg-green-300 !text-neutral-800"
+        (click)="registrarPedido()"
+      >
+        <mat-icon>save</mat-icon>
+        Guardar
+      </button>
+      <button
+        mat-flat-button
+        class="!bg-red-300 !text-neutral-800 !w-full"
+        type="button"
+        (click)="cancelarPedido()"
+      >
+        <mat-icon>cancel</mat-icon>
+        Cancelar
+      </button>
+    </div>
+  </div>
+</div>
+
+<ngx-spinner
+  bdColor="rgba(51,51,51,0.8)"
+  size="medium"
+  color="#fff"
+  type="ball-scale-multiple"
+  name="customers"
+>
+  <p style="font-size: 20px; color: white">Cargando lista de clientes...</p>
+</ngx-spinner>
+
+<ngx-spinner
+  bdColor="rgba(51,51,51,0.8)"
+  size="medium"
+  color="#fff"
+  type="ball-scale-multiple"
+  name="currencies"
+>
+  <p style="font-size: 20px; color: white">Cargando lista de monedas...</p>
+</ngx-spinner>

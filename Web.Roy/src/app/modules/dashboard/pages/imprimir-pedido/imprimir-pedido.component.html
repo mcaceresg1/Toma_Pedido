@@ -1,0 +1,268 @@
+<div
+  class="pb-12 px-4 md:px-4 bg-neutral-100 w-full h-full overflow-x-hidden overflow-y-auto"
+>
+  <div class="!fixed bottom-3 right-3 !z-50">
+    <div class="flex items-center justify-center p-3 relative">
+      <button
+        id="mainfab"
+        mat-fab
+        aria-label="Botón flotante"
+        (click)="printPedido(numPedido, logoEmpresa())"
+        class="!bg-purple-600 !text-white z-50"
+      >
+        <mat-icon>print</mat-icon>
+      </button>
+      <div
+        class="absolute w-1/2 h-1/2 bg-purple-500 animate-ping rounded-lg"
+      ></div>
+    </div>
+  </div>
+  <div
+    class="flex flex-col md:flex-row my-4 bg-white rounded-md shadow overflow-hidden"
+  >
+    <mat-toolbar class="!w-fit !bg-white">
+      <button mat-icon-button (click)="goBack()">
+        <mat-icon>close</mat-icon>
+      </button>
+      <span>Imprimir Pedido N°</span>
+      <span *ngIf="!!pedido">{{ pedido.numPedido }}</span>
+    </mat-toolbar>
+  </div>
+
+  <div class="mt-3 shadow w-full overflow-scroll">
+    <div
+      style="width: 595px; height: 842px"
+      class="pl-2 pt-2 border border-solid border-neutral-400 overflow-visible bg-white"
+    >
+      <div
+        class="flex flex-col gap-2 w-full overflow-visible"
+        id="pedido-container"
+        style="width: 575px; height: 800px; font-family: Arial, sans-serif"
+      >
+        <div
+          class="flex flex-col gap-2 flex-wrap overflow-visible"
+          *ngIf="!!pedido"
+        >
+          <div>
+            <div class="float-start max-w-72 w-full">
+              <table style="font-size: 8px" class="w-full">
+                <thead>
+                  <td class="overflow-hidden" style="width: 60px; height: 45px">
+                    <img
+                      [src]="logoEmpresa()"
+                      class="w-full h-full object-contain"
+                      (load)="onLogoLoaded()"
+                    />
+                  </td>
+                  <td>
+                    <div class="flex flex-col">
+                      <div>
+                        <strong>{{ empresa()?.nombre }}</strong>
+                      </div>
+                      <div>
+                        <strong>{{ empresa()?.ruc }}</strong>
+                      </div>
+                    </div>
+                  </td>
+                </thead>
+                <tbody class="w-full">
+                  <tr>
+                    <td>RUC CLIENTE:</td>
+                    <td>
+                      <strong>{{ pedido.rucCliente }}</strong>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="whitespace-nowrap">RAZON SOCIAL:</td>
+                    <td>
+                      <strong>{{ pedido.desCliente }}</strong>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>TELÉFONO:</td>
+                    <td>
+                      <strong>{{ pedido.telefonoCli }}</strong>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>DIRECCION:</td>
+                    <td>
+                      <strong>{{ pedido.dirPed }}</strong>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>UBIGEO:</td>
+                    <td>
+                      <strong>{{ pedido.ubigeoCli }}</strong>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="float-end">
+              <table style="font-size: 8px">
+                <thead>
+                  <tr style="font-size: 12px" class="text-indigo-900">
+                    <th class="py-3">NUMERO PEDIDO:</th>
+                    <th class="text-end py-3">{{ numPedido }}</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  <tr>
+                    <td>FECHA:</td>
+                    <td class="text-end">
+                      <strong>{{ pedido.fechaPedido }}</strong>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>HORA:</td>
+                    <td class="text-end">{{ pedido.horaPedido }}</td>
+                  </tr>
+                  <tr>
+                    <td>CONDICION:</td>
+                    <td class="text-end">
+                      <strong>{{ pedido.condicion }}</strong>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>VENDEDOR:</td>
+                    <td class="text-end">
+                      <strong>{{ pedido.nombreVendedor }}</strong>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div *ngIf="!!productos" class="flex flex-col gap-2 py-2">
+            <table class="!border-collapse" style="font-size: 8px">
+              <thead>
+                <tr>
+                  <th
+                    class="text-left border-l border-t border-b border-r-0 pl-2 py-1 border-solid border-neutral-900"
+                  >
+                    SKU
+                  </th>
+                  <th
+                    class="text-left border-l-0 border-t border-b border-r-0 py-1 border-solid border-neutral-900"
+                  >
+                    DESCRIPCION PRODUCTO
+                  </th>
+                  <th
+                    class="text-end border-l-0 border-t border-b border-r-0 py-1 border-solid border-neutral-900"
+                  >
+                    CANTIDAD
+                  </th>
+                  <th
+                    class="text-end border-l-0 border-t border-b border-r-0 py-1 border-solid border-neutral-900"
+                  >
+                    PRECIO
+                  </th>
+                  <th
+                    class="text-end border-l-0 border-t border-b border-r py-1 border-solid border-neutral-900 pr-2"
+                  >
+                    MONTO
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr *ngFor="let item of productos" appearance="raised">
+                  <td class="text-left pl-2">{{ item.sku }}</td>
+                  <td class="text-left">{{ item.descripcion }}</td>
+                  <td class="text-end">
+                    {{ item.cantidad | number : "1.2" }}
+                  </td>
+                  <td class="text-end">
+                    {{ item.precio | number : "1.2-2" }}
+                  </td>
+                  <td class="text-end pr-2">
+                    {{ item.monto | number : "1.2-2" }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <hr />
+            <div class="flex flex-row">
+              <div class="flex-1 flex-wrap px-2" style="font-size: 8px">
+                {{ pedido.observaciones }}
+              </div>
+              <div class="flex flex-nowrap">
+                <table style="font-size: 8px">
+                  <tr>
+                    <td class="text-start pr-3">BASE IMPONIBLE:</td>
+                    <td class="text-end">
+                      {{ pedido.subtotal | number : "1.2-2" }}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="text-start pr-3">IGV</td>
+                    <td class="text-end">
+                      {{ pedido.igv | number : "1.2-2" }}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td class="text-start pr-3">
+                      TOTAL GENERAL: <strong>{{ pedido.abrMoneda }}</strong>
+                    </td>
+                    <td
+                      class="text-end pl-10 border border-solid border-t border-b-0 border-l-0 border-r-0"
+                    >
+                      <strong>{{ pedido.total | number : "1.2-2" }}</strong>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+            <p style="font-size: 8px">
+              <strong>{{ empresa()?.detallesPago }}</strong>
+            </p>
+            <p style="font-size: 8px">
+              <strong>{{ pedido.montoLetras }}</strong>
+            </p>
+          </div>
+
+          <div class="flex flex-row"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <ngx-spinner
+    bdColor="rgba(51,51,51,0.8)"
+    size="medium"
+    color="#fff"
+    type="ball-scale-multiple"
+    name="print_productos"
+  >
+    <p style="font-size: 20px; color: white">Cargando detalle...</p>
+  </ngx-spinner>
+  <ngx-spinner
+    bdColor="rgba(51,51,51,0.8)"
+    size="medium"
+    color="#fff"
+    type="ball-scale-multiple"
+    name="print_usuario"
+  >
+    <p style="font-size: 20px; color: white">Cargando usuario vendedor...</p>
+  </ngx-spinner>
+  <ngx-spinner
+    bdColor="rgba(51,51,51,0.8)"
+    size="medium"
+    color="#fff"
+    type="ball-scale-multiple"
+    name="print_empresa"
+  >
+    <p style="font-size: 20px; color: white">Cargando empresa...</p>
+  </ngx-spinner>
+  <ngx-spinner
+    bdColor="rgba(51,51,51,0.8)"
+    size="medium"
+    color="#fff"
+    type="ball-scale-multiple"
+    name="img_loader"
+  >
+    <p style="font-size: 20px; color: white">Cargando logo...</p>
+  </ngx-spinner>
+</div>

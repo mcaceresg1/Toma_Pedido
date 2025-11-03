@@ -1,0 +1,19 @@
+<div class="row">
+  <div class="col-sm-12">
+    <apx-chart *ngIf="chartLabels.length > 0"
+      [series]="chartSeries!"
+      [chart]="chartDetails!"
+      [labels]="chartLabels!"
+      [title]="chartTitle!"
+      [plotOptions]="chartPlotOptions!"
+      [tooltip]="chartTooltip!">
+    </apx-chart>
+
+    <div class="chartNotData" *ngIf="chartLabels.length == 0">
+      <span class="icn_excl">
+        <i class="fa-solid fa-triangle-exclamation "></i>
+        Sin datos para mostrar
+      </span>
+    </div>
+  </div>
+</div>

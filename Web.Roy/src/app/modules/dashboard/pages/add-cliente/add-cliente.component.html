@@ -1,0 +1,331 @@
+<div
+  class="pb-36 md:pb-12 px-4 md:px-4 bg-neutral-100 w-full h-full overflow-x-hidden overflow-y-auto !relative"
+>
+  <div
+    class="flex flex-col md:flex-row my-4 bg-white rounded-md shadow overflow-hidden"
+  >
+    <mat-toolbar class="!w-fit !bg-white">
+      <button mat-icon-button (click)="goBack()">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <span>Nuevo Cliente</span>
+    </mat-toolbar>
+    <div
+      class="md:flex-1 flex flex-col md:justify-center md:items-end px-4 pb-2 md:pb-0"
+    >
+      <nav class="flex" aria-label="Breadcrumb">
+        <ol
+          class="inline-flex items-center space-x-1 md:space-x-2 rtl:space-x-reverse"
+        >
+          <li class="inline-flex items-center">
+            <a
+              [routerLink]="['/dashboard/pages/ventas']"
+              class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-purple-600 dark:text-gray-400 dark:hover:text-white no-underline"
+            >
+              <mat-icon>home</mat-icon>
+              Home
+            </a>
+          </li>
+          <li>
+            <div class="flex items-center">
+              <mat-icon class="text-gray-400">chevron_right</mat-icon>
+              <a
+                [routerLink]="['/dashboard/pages/addpedido']"
+                class="ms-1 text-sm font-medium text-gray-700 hover:text-purple-600 md:ms-2 dark:text-gray-400 dark:hover:text-white no-underline"
+                >Nuevo Pedido</a
+              >
+            </div>
+          </li>
+          <li aria-current="page">
+            <div class="flex items-center">
+              <mat-icon class="text-gray-400">chevron_right</mat-icon>
+              <span
+                class="ms-1 text-sm font-medium text-gray-500 md:ms-2 dark:text-gray-400"
+                >Nuevo Cliente</span
+              >
+            </div>
+          </li>
+        </ol>
+      </nav>
+    </div>
+  </div>
+
+  <div
+    class="mt-3 flex flex-col gap-3 bg-white rounded-md shadow overflow-hidden px-2 py-4 md:p-4"
+  >
+    <div class="flex-row justify-end w-full gap-2 hidden md:flex" role="group">
+      <button
+        mat-flat-button
+        type="button"
+        (click)="registrarCliente()"
+        class="!bg-green-300 !text-neutral-800"
+      >
+        <mat-icon>save</mat-icon>
+        Guardar
+      </button>
+      <button
+        mat-flat-button
+        class="!bg-red-300 !text-neutral-800"
+        type="button"
+        (click)="cancelarCliente()"
+      >
+        <mat-icon>cancel</mat-icon>
+        Cancelar
+      </button>
+    </div>
+
+    <form class="mb-3" [formGroup]="formCliente" autocomplete="off">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 py-2 gap-2">
+        <mat-form-field class="!w-full !h-fit" appearance="outline">
+          <mat-label>Razón Social</mat-label>
+          <input
+            matInput
+            placeholder="Razón Social"
+            value=""
+            formControlName="razon"
+          />
+
+          @if (formCliente.controls["razon"].getError("required")) {
+          <mat-error>Escriba la razón social del cliente.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-select formControlName="tipoDocumento">
+            <mat-option
+              *ngFor="let item of tiposDocumento()"
+              [value]="item.tipo"
+            >
+              {{ item.descripcion }}
+            </mat-option>
+          </mat-select>
+          <mat-label>Tipo de Documento</mat-label>
+          <mat-icon matPrefix>badge</mat-icon>
+          @if (formCliente.controls["tipoDocumento"].getError("required")) {
+          <mat-error>Es necesario seleccionar el tipo de documento.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field class="!w-full !h-fit" appearance="outline">
+          <mat-label>Documento</mat-label>
+          <input
+            matInput
+            placeholder="Documento"
+            value=""
+            formControlName="ruc"
+          />
+          @if (formCliente.controls["ruc"].getError("required")) {
+          <mat-error>Escriba el documento del cliente.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field class="!w-full !h-fit" appearance="outline">
+          <mat-label>Dirección</mat-label>
+          <input
+            matInput
+            placeholder="Dirección"
+            value=""
+            formControlName="direccion"
+          />
+          <mat-icon matPrefix>map</mat-icon>
+
+          @if (formCliente.controls["direccion"].getError("required")) {
+          <mat-error>Escriba la dirección del cliente.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field class="!w-full !h-fit" appearance="outline">
+          <mat-label>Teléfono</mat-label>
+          <input
+            matInput
+            placeholder="Teléfono"
+            value=""
+            formControlName="telefono"
+          />
+          <mat-icon matPrefix>phone</mat-icon>
+
+          @if (formCliente.controls["telefono"].getError("required")) {
+          <mat-error>Escriba el teléfono del cliente.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field class="!w-full !h-fit" appearance="outline">
+          <mat-label>Ciudad</mat-label>
+          <input
+            matInput
+            placeholder="Ciudad"
+            value=""
+            formControlName="ciudad"
+          />
+          <mat-icon matPrefix>location_city</mat-icon>
+
+          @if (formCliente.controls["ciudad"].getError("required")) {
+          <mat-error>El campo ciudad es requerido.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field class="!w-full !h-fit" appearance="outline">
+          <mat-label>Contacto</mat-label>
+          <input
+            matInput
+            placeholder="Contacto"
+            value=""
+            formControlName="contacto"
+          />
+          <mat-icon matPrefix>person</mat-icon>
+
+          @if (formCliente.controls["contacto"].getError("required")) {
+          <mat-error>El campo contacto es requerido.</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field class="!w-full !h-fit" appearance="outline">
+          <mat-label>Teléfono Contacto</mat-label>
+          <input
+            matInput
+            placeholder="Teléfono Contacto"
+            value=""
+            formControlName="telefonoContacto"
+          />
+          <mat-icon matPrefix>phone</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field class="!w-full !h-fit" appearance="outline">
+          <mat-label>Dias de Crédito</mat-label>
+          <input
+            matInput
+            placeholder="Dias de crédito"
+            value=""
+            formControlName="diasCredito"
+            type="number"
+            [max]="9999"
+          />
+          @if (formCliente.controls["diasCredito"].getError("required")) {
+          <mat-error>El campo días de crédito es requerido.</mat-error>
+          } @if (formCliente.controls["diasCredito"].getError("max")) {
+          <mat-error>El valor no debe exceder a 9999.</mat-error>
+          } @if (formCliente.controls["diasCredito"].getError("min")) {
+          <mat-error>El valor no debe ser menor a 0.</mat-error>
+          }
+        </mat-form-field>
+        <mat-form-field class="!w-full !h-fit" appearance="outline">
+          <mat-label>Correo</mat-label>
+          <input
+            matInput
+            placeholder="Correo"
+            value=""
+            formControlName="correo"
+          />
+          <mat-icon matPrefix>mail</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field class="!w-full !h-fit" appearance="outline">
+          <mat-label>Ubigeo</mat-label>
+          <input
+            matInput
+            placeholder="Ubigeo"
+            value=""
+            formControlName="ubigeo"
+            [readonly]="true"
+            (click)="openUbigeoDialog()"
+          />
+          <mat-icon matPrefix>place</mat-icon>
+          @if (formCliente.controls["ubigeo"].getError("required")) {
+          <mat-error>El campo ubigeo es requerido.</mat-error>
+          }
+          <button
+            matSuffix
+            mat-flat-button
+            class="mr-2"
+            (click)="openUbigeoDialog()"
+          >
+            <mat-icon>search</mat-icon>
+            Buscar
+          </button>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-select formControlName="condicion">
+            <mat-option value="">Ninguno</mat-option>
+            <mat-option
+              *ngFor="let item of condiciones()"
+              [value]="item.codigo"
+            >
+              {{ item.descripcion }}
+            </mat-option>
+          </mat-select>
+          <mat-label>Condición</mat-label>
+          <mat-icon matPrefix>handshake</mat-icon>
+        </mat-form-field>
+      </div>
+    </form>
+  </div>
+  <div
+    class="!rounded-none !rounded-tl-lg !rounded-tr-lg !z-40 flex-col py-4 px-2 gap-2 flex md:hidden !fixed bottom-0 left-0 right-0 bg-white"
+    style="
+      -webkit-box-shadow: -1px -17px 26px -12px rgba(0, 0, 0, 0.22);
+      -moz-box-shadow: -1px -17px 26px -12px rgba(0, 0, 0, 0.22);
+      box-shadow: -1px -17px 26px -12px rgba(0, 0, 0, 0.22);
+    "
+  >
+    <div
+      class="flex-row justify-evenly w-full gap-2 flex md:hidden"
+      role="group"
+    >
+      <button
+        mat-flat-button
+        type="button"
+        class="!w-full !bg-opacity-50 !bg-green-300 !text-neutral-800"
+        (click)="registrarCliente()"
+      >
+        <mat-icon>save</mat-icon>
+        Guardar
+      </button>
+      <button
+        mat-flat-button
+        class="!bg-red-300 !text-neutral-800 !w-full"
+        type="button"
+        (click)="cancelarCliente()"
+      >
+        <mat-icon>cancel</mat-icon>
+        Cancelar
+      </button>
+    </div>
+  </div>
+</div>
+<ngx-spinner
+  bdColor="rgba(51,51,51,0.8)"
+  size="medium"
+  color="#fff"
+  type="ball-scale-multiple"
+  name="create_condicion"
+>
+  <p style="font-size: 20px; color: white">Cargando lista de condiciones...</p>
+</ngx-spinner>
+<ngx-spinner
+  bdColor="rgba(51,51,51,0.8)"
+  size="medium"
+  color="#fff"
+  type="ball-scale-multiple"
+  name="create_usuario"
+>
+  <p style="font-size: 20px; color: white">Cargando usuario vendedor...</p>
+</ngx-spinner>
+<ngx-spinner
+  bdColor="rgba(51,51,51,0.8)"
+  size="medium"
+  color="#fff"
+  type="ball-scale-multiple"
+  name="create_empresa"
+>
+  <p style="font-size: 20px; color: white">Cargando empresa...</p>
+</ngx-spinner>
+<ngx-spinner
+  bdColor="rgba(51,51,51,0.8)"
+  size="medium"
+  color="#fff"
+  type="ball-scale-multiple"
+  name="tipos_doc"
+>
+  <p style="font-size: 20px; color: white">Cargando tipos de documento...</p>
+</ngx-spinner>

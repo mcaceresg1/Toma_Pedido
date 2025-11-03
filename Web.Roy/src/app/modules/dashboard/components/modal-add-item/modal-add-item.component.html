@@ -1,0 +1,140 @@
+<h2 mat-dialog-title>Agregar producto</h2>
+<mat-dialog-content>
+  <div class="overflow-x-hidden overflow-y-auto py-2">
+    <form [formGroup]="formBuscarProd" autocomplete="off">
+      <mat-form-field class="w-full" appearance="outline">
+        <mat-label>Buscar por CÓDIGO o DESCRIPCIÓN</mat-label>
+        <input
+          type="search"
+          matInput
+          formControlName="inputBuscarProd"
+          placeholder="Buscar por CÓDIGO o DESCRIPCIÓN"
+          (keyup)="buscarItem($event)"
+        />
+        <mat-icon matPrefix>search</mat-icon>
+      </mat-form-field>
+    </form>
+    <div
+      class="w-full gap-2 flex flex-col md:px-2"
+      *ngIf="productosFiltrados.length > 0"
+    >
+      <mat-card
+        appearance="raised"
+        class="!bg-white !p-0 !overflow-hidden"
+        *ngFor="let item of productosFiltrados"
+      >
+        <div class="flex flex-row gap-2 justify-center items-stretch">
+          <div
+            class="px-2 py-4 md:px-4 md:py-6 flex-1 flex flex-col md:flex-row gap-4 overflow-hidden"
+          >
+            <div class="flex flex-col md:flex-1">
+              <p
+                class="poppins-regular text-xs w-fit"
+                matBadge="4"
+                matBadgeOverlap="false"
+              >
+                <b>{{ item.codProducto }}</b>
+                -
+                {{ item.unmProducto }}
+                <br />
+                <span>{{ item.descProducto }}</span>
+              </p>
+            </div>
+            <div class="grid grid-cols-2 gap-2 max-w-full md:max-w-xs w-full">
+              <div class="w-full">
+                <p class="poppins-regular flex flex-col w-full|">
+                  <label class="text-xs"><b>Precio</b></label>
+                  <span
+                    type="text"
+                    class="h-8 bg-neutral-200 border-neutral-300 px-4 py-2 border text-xs w-full flex items-center rounded-full"
+                  >
+                    {{ codMoneda == "001" ? "S/ " : "$ " }}
+                    {{
+                      (codMoneda == "001" ? item.precSoles : item.precDolares)
+                        | number : "1.2-2"
+                    }}</span
+                  >
+                </p>
+              </div>
+              <div class="w-full">
+                <div class="w-full flex flex-col poppins-regular text-xs">
+                  <label class="text-xs"><b>Cantidad</b></label>
+                  <div
+                    class="bg-neutral-200 border-neutral-300 px-1 py-2 border text-xs w-full flex flex-row overflow-hidden h-8 items-center justify-center content-center rounded-full"
+                  >
+                    <button
+                      class="h-7 border-none outline-non m-0 flex items-center justify-center rounded-full bg-neutral-100 text-neutral-500 p-1"
+                    >
+                      <mat-icon>remove</mat-icon>
+                    </button>
+                    <input
+                      matInput
+                      type="number"
+                      id="cnt{{ item.codProducto }}"
+                      value="1"
+                      class="px-2 py-0 m-0 leading-none text-xs bg-transparent border-none outline-none flex-1"
+                      min="1"
+                      style="width: 4ch"
+                      pattern="^[0-9]+"
+                    />
+                    <button
+                      class="h-7 border-none outline-non m-0 flex items-center justify-center rounded-full bg-neutral-100 text-neutral-500 p-1"
+                    >
+                      <mat-icon>add</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            class="flex bg-green-500 px-2 md:px-8 items-center justify-center cursor-pointer"
+            (click)="
+              addToLista(
+                item.codProducto,
+                item.descProducto,
+                item.precSoles,
+                item.precDolares
+              )
+            "
+          >
+            <mat-icon class="text-white">add</mat-icon>
+          </div>
+        </div>
+      </mat-card>
+    </div>
+  </div>
+  <div class="row mx-1" *ngIf="productosFiltrados.length == 0">
+    <div class="card col-12" style="background-color: #e9ecef">
+      <div class="card-body">
+        <p>No se encontraron registros para mostrar</p>
+      </div>
+    </div>
+  </div>
+  <div class="px-4 py-2">
+    <p class="text-sm">Tot Registros: {{ productosFiltrados.length }}</p>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions>
+  <button
+    mat-button
+    type="button"
+    id="limpiarModal"
+    data-bs-dismiss="modal"
+    (click)="limpiarForm()"
+  >
+    <mat-icon>brush</mat-icon> Limpiar
+  </button>
+
+  <button
+    mat-button
+    type="button"
+    id="cerrarModal"
+    data-bs-dismiss="modal"
+    (click)="onNoClick()"
+  >
+    <mat-icon>close</mat-icon> Cerrar
+  </button>
+</mat-dialog-actions>

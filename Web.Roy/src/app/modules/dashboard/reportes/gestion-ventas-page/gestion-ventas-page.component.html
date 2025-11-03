@@ -1,0 +1,83 @@
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-xl-4 col-lg-4 col-md-4 col-sm-12 col-12">
+                    <h3 class="textTitleReport">Gestión de ventas</h3>
+                </div>
+                <div class="col-xl-8 col-lg-8 col-md-8 col-sm-12 col-12">
+                    <div class="row">
+                        <div class="col-xl-4 col-lg-4 col-md-4 col-sm-12 col-12">
+                            <label class="txtReport">Local:</label>
+                            <select class="form-select txtReport" id="select" [(ngModel)]="selectedLocal"
+                                (change)="onfilterSelected()">
+                                <option [value]="000"><b>TODOS</b></option>
+                                <option *ngFor="let item of ListLocal" [value]="item.codLocal">{{item.descLocal}}</option>
+                            </select>
+                        </div>
+                        <div class="col-xl-8 col-lg-8 col-md-8 col-sm-12 col-12">
+                            <label class="txtReport">Rango de fechas:</label>
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <input type="date" class="form-control txtReport" [(ngModel)]="startDate" id="fechaDesde"
+                                        name="fechaDesde" (ngModelChange)="onfilterSelected()">
+                                </div>
+                                <div class="col-6">
+                                    <input type="date" class="form-control txtReport" [(ngModel)]="endDate" id="fechaHasta"
+                                        name="fechaHasta" (ngModelChange)="onfilterSelected()">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- COMPONENTE TOTALES -->
+    <div class="mt-2">
+        <app-cab-totales></app-cab-totales>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="row mt-4">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12 mt-3">
+            <div class="card">
+                <div class="card-body">
+                    <app-chart-venta-canal></app-chart-venta-canal>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12 mt-3">
+            <div class="card">
+                <div class="card-body">
+                    <app-chart-forma-pago></app-chart-forma-pago>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-3">
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12 mt-3">
+            <div class="card">
+                <div class="card-body">
+                    <app-chart-prod-vendido></app-chart-prod-vendido>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12 mt-3">
+            <div class="card">
+                <div class="card-body">
+                    <app-chart-prod-vent-importe></app-chart-prod-vent-importe>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12 mt-3">
+            <div class="card">
+                <div class="card-body">
+                    <app-chart-prod-subgrupo></app-chart-prod-subgrupo>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

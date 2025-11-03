@@ -1,0 +1,243 @@
+<div class="pb-12 px-4 md:px-4 bg-neutral-100 w-full h-full overflow-x-hidden overflow-y-auto">
+
+  <div class="flex flex-col md:flex-row my-4 bg-white rounded-md shadow overflow-hidden">
+    <mat-toolbar class="!w-fit !bg-white">
+      <span>Reporte de Proveedores</span>
+    </mat-toolbar>
+  </div>
+
+  <div class="mt-3 flex flex-col gap-3 bg-white rounded-md shadow overflow-hidden px-2 py-4 md:p-4">
+    <div
+      class="px-6 py-4 grid gap-3 md:flex md:justify-between md:items-center border-b border-gray-200 dark:border-neutral-700">
+      <!-- Input -->
+      <div class="sm:col-span-1 min-w-[280px]">
+        <label for="hs-as-table-product-review-search" class="sr-only">Search</label>
+        <div class="relative">
+          <input type="text" id="hs-as-table-product-review-search" name="hs-as-table-product-review-search"
+            [(ngModel)]="searchTerm" (ngModelChange)="onSearch($event)"
+            class="py-2 px-3 ps-11 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50 disabled:pointer-events-none dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400 dark:placeholder-neutral-500 dark:focus:ring-neutral-600"
+            placeholder="Buscar por ruc o razon social">
+          <div class="absolute inset-y-0 start-0 flex items-center pointer-events-none ps-4">
+            <svg class="size-4 text-gray-400 dark:text-neutral-500" xmlns="http://www.w3.org/2000/svg" width="16"
+              height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path
+                d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z" />
+            </svg>
+          </div>
+        </div>
+      </div>
+      <!-- End Input -->
+
+      <div class="sm:col-span-2 md:grow">
+        <div class="flex justify-end gap-x-2">
+          <button mat-button [matMenuTriggerFor]="menu"
+            class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            Exportar
+            <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          <mat-menu #menu="matMenu" class="bg-white border border-gray-200 rounded-md shadow-lg p-1">
+            <button mat-menu-item (click)="exportProveedoresToPDF()" class="text-gray-700 hover:bg-gray-100">
+              Exportar a PDF
+            </button>
+            
+              <button mat-menu-item (click)="exportarProveedoresExcel()" class="text-gray-700 hover:bg-gray-100">
+                Exportar a Excel
+              </button>
+              <!-- <button mat-menu-item (click)="exportToCSV()" class="text-gray-700 hover:bg-gray-100">
+                Exportar a CSV
+              </button> -->
+             
+          </mat-menu>
+
+        </div>
+      </div>
+
+    </div>
+    <!-- <table class="min-w-full divide-y divide-gray-200 dark:divide-neutral-700">
+          <thead class="bg-gray-50 dark:bg-neutral-800">
+            <tr>
+              <th class="px-3 py-2">Id</th>
+              <th (click)="setOrder('descripcion')" class="px-3 py-2 cursor-pointer">Descripción <span *ngIf="order === 'descripcion'">{{ reverse ? '▼' : '▲' }}</span></th>
+              <th class="px-3 py-2">Clase</th>
+              <th class="px-3 py-2">Marca</th>
+              <th class="px-3 py-2">UDM</th>
+              <th class="px-3 py-2">Departamento</th>
+              <th class="px-3 py-2">Versión</th>
+              <th class="px-3 py-2">Tipo Mercadería</th>
+              <th class="px-3 py-2">SKU</th>
+              <th class="px-3 py-2">Empaque</th>
+              <th class="px-3 py-2">Peso</th>
+              <th class="px-3 py-2">% Comisión</th>
+              <th class="px-3 py-2">Ubicación</th>
+              <th class="px-3 py-2">SUNAT</th>
+              <th class="px-3 py-2">Costo Compra</th>
+              <th class="px-3 py-2">Soles</th>
+              <th class="px-3 py-2">Existencia</th>
+              <th class="px-3 py-2">Costo Prom.</th>
+              <th class="px-3 py-2">Últ. Compra</th>
+              <th class="px-3 py-2">Costo $</th>
+              <th class="px-3 py-2">IGV</th>
+              <th class="px-3 py-2">Stock Max</th>
+              <th class="px-3 py-2">Stock Min</th>
+              <th class="px-3 py-2">Últ. Inventario</th>
+              <th class="px-3 py-2">Tipo Existencia</th>
+              <th class="px-3 py-2">Unitario</th>
+              <th class="px-3 py-2">Cat. B</th>
+              <th class="px-3 py-2">Cat. A</th>
+              <th class="px-3 py-2">Personalizado</th>
+              <th class="px-3 py-2">Disponible</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 dark:divide-neutral-700">
+            
+          </tbody>
+        </table> -->
+    <div class="overflow-x-auto border rounded shadow h-[calc(100vh-200px)]">
+      <table class="min-w-full text-sm text-left text-gray-800">
+        <thead class="bg-gray-100 text-xs uppercase text-gray-600">
+          <tr>
+            <th class=" px-3 py-1 whitespace-nowrap w-auto min-w-[100px] cursor-pointer">
+              Tipo Doc
+            </th>
+            <th (click)="toggleOrder('razonSocial')" class="cursor-pointer">
+              RUC
+              <span *ngIf="order === 'razonSocial'">{{ reverse ? '🔽' : '🔼'  }}</span>
+            </th>
+            <th (click)="toggleOrder('razonSocial')" class="whitespace-nowrap cursor-pointer">
+              Razón Social
+              <span *ngIf="order === 'razonSocial'">{{ reverse ? '🔽' : '🔼'  }}</span>
+            </th>
+            <th class="px-3 py-2 whitespace-nowrap">Dirección Fiscal</th>
+            <th class="px-3 py-1 whitespace-nowrap w-auto min-w-[150px]">Teléfono</th>
+            <th class="px-3 py-1 whitespace-nowrap w-auto min-w-[150px]">Rama Gremio</th>
+            <th class="px-3 py-2">Tipo Gasto</th>
+            <th class="px-3 py-2 whitespace-nowrap">Ubigeo</th>
+            <th class="px-3 py-2">Correo</th>
+            <th class="px-3 py-2 whitespace-nowrap">Persona Contacto</th>
+            <th class="px-3 py-2 whitespace-nowrap">Vendedor</th>
+            <th class="px-3 py-2">Días Crédito</th>
+            <th class="px-3 py-2">Límite Crédito</th>
+            <th class="px-3 py-2">Notas Adicionales</th>
+            <th class="px-3 py-2">Clase Auxiliar</th>
+            <th class="px-3 py-2 whitespace-nowrap">Grupo Auxiliar</th>
+            <th class="px-3 py-2">Centro Costo</th>
+            <th class="px-3 py-2">Página Web</th>
+            <th class="px-3 py-2">Precio Venta</th>
+            <th class="px-3 py-2">Fecha Ingreso</th>
+            <th class="px-3 py-2 whitespace-nowrap">Condición</th>
+            <th class="px-3 py-2">Banco</th>
+            <th class="px-3 py-2 whitespace-nowrap">Cuenta</th>
+            <th class="px-3 py-2 whitespace-nowrap">Titular Cuenta</th>
+            <th class="px-3 py-2">Estado</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y">
+          <tr *ngFor="let item of paginatedItems.data">
+            <td class="px-3 py-1">{{ item.tipo_Doc }}</td>
+            <td (click)="abrirDetalle(item)"
+              class="text-blue-600 cursor-pointer hover:underline px-3 py-2 whitespace-nowrap text-sm font-medium">
+              {{ item.ruc }}
+            </td>
+            <td class="px-3 py-1 whitespace-nowrap">{{ item.razonSocial }}</td>
+            <td class="px-3 py-1 whitespace-nowrap">{{ item.direccionFiscal }}</td>
+            <td class="px-3 py-1">{{ item.telefono }}</td>
+            <td class="px-3 py-1">{{ item.ramaGremio }}</td>
+            <td class="px-3 py-1">{{ item.tipoGasto }}</td>
+            <td class="px-3 py-1 whitespace-nowrap">{{ item.ubigeo }}</td>
+            <td class="px-3 py-1">{{ item.correo }}</td>
+            <td class="px-3 py-1 whitespace-nowrap">{{ item.personaContacto }}</td>
+            <td class="px-3 py-1 whitespace-nowrap">{{ item.vendedor }}</td>
+            <td class="px-3 py-1">{{ item.dias_Credito }}</td>
+            <td class="px-3 py-1">{{ item.limite_Credito | number:'1.2-2' }}</td>
+            <td class="px-3 py-1">{{ item.notasAdicionales }}</td>
+            <td class="px-3 py-1">{{ item.claseAuxiliar }}</td>
+            <td class="px-3 py-1 whitespace-nowrap">{{ item.grupoAuxiliar }}</td>
+            <td class="px-3 py-1">{{ item.centroCosto }}</td>
+            <td class="px-3 py-1">{{ item.paginaWeb }}</td>
+            <td class="px-3 py-1">{{ item.precioVenta }}</td>
+            <td class="px-3 py-1">{{ item.fechaIngreso | date:'dd/MM/yyyy' }}</td>
+            <td class="px-3 py-1 whitespace-nowrap">{{ item.condicion }}</td>
+            <td class="px-3 py-1">{{ item.banco }}</td>
+            <td class="px-3 py-1 whitespace-nowrap">{{ item.cuenta }}</td>
+            <td class="px-3 py-1 whitespace-nowrap">{{ item.titularCuenta }}</td>
+            <td class="px-3 py-1">{{ item.estado }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- End Table -->
+    <div
+      class="px-6 py-4 grid gap-3 md:flex md:justify-between md:items-center border-t border-gray-200 dark:border-neutral-700">
+      <div class="max-w-sm space-y-3">
+        <select select [(ngModel)]="itemsPerPage"
+          class="py-2 px-3 pe-9 block w-full border-gray-200 rounded-lg text-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-neutral-900 dark:border-neutral-700 dark:text-neutral-400">
+          <option [ngValue]="10">10</option>
+          <option [ngValue]="25">25</option>
+          <option [ngValue]="50">50</option>
+          <option [ngValue]="75">75</option>
+          <option [ngValue]="100">100</option>
+        </select>
+      </div>
+
+      <div class="mt-4 flex justify-between items-center">
+        <button (click)="changePage(page - 1)" [disabled]="page <= 1" class="px-3 py-1 bg-gray-200 rounded">
+          ← Prev
+        </button>
+
+        <span>
+          Página {{ paginatedItems.currentPage }} de {{ paginatedItems.totalPages }}
+        </span>
+
+        <button (click)="changePage(page + 1)" [disabled]="page >= paginatedItems.totalPages"
+          class="px-3 py-1 bg-gray-200 rounded">
+          Next →
+        </button>
+      </div>
+
+    </div>
+    <!-- End Footer -->
+  </div>
+</div>
+
+<!-- Modal -->
+<div *ngIf="modalAbierto" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+  <div class="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
+    <button (click)="cerrarModal()" class="absolute top-2 right-2 text-gray-500 hover:text-gray-700">
+      ✕
+    </button>
+
+    <h2 class="text-lg font-semibold mb-4">Detalle del Proveedor</h2>
+
+    <div *ngIf="proveedorSeleccionado">
+      <p><strong>Tipo Doc:</strong> {{ proveedorSeleccionado.tipo_Doc }}</p>
+      <p><strong>RUC:</strong> {{ proveedorSeleccionado.ruc }}</p>
+      <p><strong>Razón Social:</strong> {{ proveedorSeleccionado.razonSocial }}</p>
+      <p><strong>Dirección Fiscal:</strong> {{ proveedorSeleccionado.direccionFiscal }}</p>
+      <p><strong>Teléfono:</strong> {{ proveedorSeleccionado.telefono }}</p>
+      <p><strong>Rama Gremio:</strong> {{ proveedorSeleccionado.ramaGremio }}</p>
+      <p><strong>Tipo Gasto:</strong> {{ proveedorSeleccionado.tipoGasto }}</p>
+      <p><strong>Ubigeo:</strong> {{ proveedorSeleccionado.ubigeo }}</p>
+      <p><strong>Correo:</strong> {{ proveedorSeleccionado.correo }}</p>
+      <p><strong>Persona de Contacto:</strong> {{ proveedorSeleccionado.personaContacto }}</p>
+      <p><strong>Vendedor:</strong> {{ proveedorSeleccionado.vendedor }}</p>
+      <p><strong>Días Crédito:</strong> {{ proveedorSeleccionado.dias_Credito }}</p>
+      <p><strong>Límite Crédito:</strong> {{ proveedorSeleccionado.limite_Credito | number:'1.2-2' }}</p>
+      <p><strong>Notas Adicionales:</strong> {{ proveedorSeleccionado.notasAdicionales }}</p>
+      <p><strong>Clase Auxiliar:</strong> {{ proveedorSeleccionado.claseAuxiliar }}</p>
+      <p><strong>Grupo Auxiliar:</strong> {{ proveedorSeleccionado.grupoAuxiliar }}</p>
+      <p><strong>Centro Costo:</strong> {{ proveedorSeleccionado.centroCosto }}</p>
+      <p><strong>Página Web:</strong> {{ proveedorSeleccionado.paginaWeb }}</p>
+      <p><strong>Precio Venta:</strong> {{ proveedorSeleccionado.precioVenta }}</p>
+      <p><strong>Fecha Ingreso:</strong> {{ proveedorSeleccionado.fechaIngreso | date:'dd/MM/yyyy' }}</p>
+      <p><strong>Condición:</strong> {{ proveedorSeleccionado.condicion }}</p>
+      <p><strong>Banco:</strong> {{ proveedorSeleccionado.banco }}</p>
+      <p><strong>Cuenta:</strong> {{ proveedorSeleccionado.cuenta }}</p>
+      <p><strong>Titular Cuenta:</strong> {{ proveedorSeleccionado.titularCuenta }}</p>
+      <p><strong>Estado:</strong> {{ proveedorSeleccionado.estado }}</p>
+      <!-- Agrega más campos si es necesario -->
+    </div>
+  </div>
+</div>

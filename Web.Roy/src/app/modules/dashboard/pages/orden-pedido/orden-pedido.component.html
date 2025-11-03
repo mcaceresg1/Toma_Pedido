@@ -1,0 +1,150 @@
+<div class="pb-12 px-4 md:px-4 bg-neutral-100 w-full h-full overflow-x-hidden overflow-y-auto">
+
+  <!-- Título -->
+  <div class="flex flex-col md:flex-row my-4 bg-white rounded-md shadow overflow-hidden">
+    <mat-toolbar class="!w-fit !bg-white">
+      <span>Histórico - ORDEN DE PEDIDO</span>
+    </mat-toolbar>
+  </div>
+
+  <div class="mt-3 flex flex-col gap-3 bg-white rounded-md shadow overflow-hidden px-6 py-4 md:p-4">
+
+    <!-- Filtros fechas -->
+    <div class="flex flex-wrap gap-4 items-center border-b border-gray-200 pb-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1" for="fechaDesde">Desde</label>
+        <input type="date" id="fechaDesde" [(ngModel)]="fechaDesde" class="border rounded px-3 py-2" />
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1" for="fechaHasta">Hasta</label>
+        <input type="date" id="fechaHasta" [(ngModel)]="fechaHasta" class="border rounded px-3 py-2" />
+      </div>
+      <!-- Vendedor -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1" for="vendedor">Vendedor</label>
+        <select id="vendedor" [(ngModel)]="vendedorSeleccionado" class="border rounded px-3 py-2">
+          <option [ngValue]="null">-- Seleccione --</option>
+          <option *ngFor="let vendedor of vendedores" [value]="vendedor.vendedor">{{ vendedor.nombre }}</option>
+
+        </select>
+      </div>
+
+      <div class="mt-6">
+        <button (click)="buscar()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+          Buscar
+        </button>
+        <button (click)="limpiarFiltros()"
+          class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400 transition">
+          Limpiar filtros
+        </button>
+      </div>
+
+    </div>
+    <!-- Spinner visible mientras carga -->
+
+    <!-- Tabla cabecera órdenes -->
+    <div class="overflow-x-auto border rounded shadow max-h-[300px] mb-4">
+      <table class="min-w-full text-sm text-left text-gray-800">
+        <thead class="bg-blue-600 text-white text-xs uppercase">
+          <tr>
+            <th class="px-3 py-2">Vendedor</th>
+            <th class="px-3 py-2">Transacción</th>
+            <th class="px-3 py-2">Fecha</th>
+            <th class="px-3 py-2">Cliente</th>
+            <th class="px-3 py-2">Referencia</th>
+            <th class="px-3 py-2">Guía</th>
+            <th class="px-3 py-2">Factura</th>
+            <th class="px-3 py-2 text-right">Total</th>
+            <th class="px-3 py-2">Estado</th>
+            <th class="px-3 py-2">SUNAT</th>
+            <th class="px-3 py-2">Referencia Anulada</th>
+            <th class="px-3 py-2 text-right">Original</th>
+            <th class="px-3 py-2 text-right">Despachada</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200 cursor-pointer">
+          <tr *ngIf="cargando">
+            <td colspan="13">
+              <div
+                style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100px;">
+                <mat-spinner diameter="40"></mat-spinner>
+                <div style="margin-top: 8px;">Cargando información, por favor espere...</div>
+              </div>
+            </td>
+            </tr>
+            <tr *ngFor="let orden of ordenes" (click)="seleccionarOrden(orden)"
+              [class.bg-blue-100]="orden === ordenSeleccionada">
+              <td class="px-3 py-1">{{ orden.vendedor }}</td>
+              <td class="px-3 py-1">{{ orden.operacion }}</td>
+              <td class="px-3 py-1">{{ orden.fecha | date:'dd/MM/yyyy' }}</td>
+              <td class="px-3 py-1">{{ orden.cliente }}</td>
+              <td class="px-3 py-1">{{ orden.referencia }}</td>
+              <td class="px-3 py-1">{{ orden.guia }}</td>
+              <td class="px-3 py-1">{{ orden.factura }}</td>
+              <td class="px-3 py-1 text-right">{{ orden.total | currency:orden.simbolo:'symbol':'1.2-2' }}</td>
+              <td class="px-3 py-1">{{ orden.estado }}</td>
+              <td class="px-3 py-1">{{ orden.aceptadaPorLaSunat }}</td>
+              <td class="px-3 py-1">
+                <span class="px-2 py-1 rounded text-xs font-semibold"
+                  [ngClass]="orden.anu ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'">
+                  {{ orden.anu ? 'Anulada' : 'Vigente' }}
+                </span>
+              </td>
+              <td class="px-3 py-1 text-right">{{ orden.orginal }}</td>
+              <td class="px-3 py-1 text-right">{{ orden.despachada }}</td>
+            </tr>
+            <!-- Solo mostrar si no hay datos y NO está cargando -->
+            <tr *ngIf="!cargando && ordenes.length === 0">
+              <td colspan="13" style="text-align: center; padding: 10px;">
+                No hay órdenes para las fechas seleccionadas.
+              </td>
+            </tr>
+        </tbody>
+      </table>
+
+    </div>
+
+    <!-- Tabla detalle de orden seleccionada -->
+    <div *ngIf="ordenSeleccionada" class="overflow-x-auto border rounded shadow max-h-[300px]">
+      <h3 class="font-semibold mb-2 px-3">
+        Detalle de la Orden: {{ ordenSeleccionada?.factura || ordenSeleccionada?.guia || ('#' +
+        ordenSeleccionada?.operacion) }}
+        - Items ({{ detalleOrden.length }})
+      </h3>
+      <table class="min-w-full text-sm text-left text-gray-800">
+        <thead class="bg-gray-200 text-xs uppercase text-gray-600">
+          <tr>
+            <th class="px-3 py-2">Código</th>
+            <th class="px-3 py-2">Descripción</th>
+            <th class="px-3 py-2 text-right">Cantidad</th>
+            <th class="px-3 py-2 text-right">Despachada</th>
+            <th class="px-3 py-2">Medida</th>
+            <th class="px-3 py-2 text-right">Unitario</th>
+            <th class="px-3 py-2 text-right">Total</th>
+            <th class="px-3 py-2 text-right">Descuento</th>
+            <th class="px-3 py-2 text-right">Utilidad</th>
+            <th class="px-3 py-2 text-right">%</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          <tr *ngFor="let item of detalleOrden">
+            <td class="px-3 py-1">{{ item.codigoBarra }}</td>
+            <td class="px-3 py-1">{{ item.descripcion }}</td>
+            <td class="px-3 py-1 text-right">{{ item.cantidad }}</td>
+            <td class="px-3 py-1 text-right">{{ item.cantidadDespachada }}</td>
+            <td class="px-3 py-1">{{ item.medida }}</td>
+            <td class="px-3 py-1 text-right">{{ item.unitario | currency:'PEN':'symbol':'1.2-2' }}</td>
+            <td class="px-3 py-1 text-right">{{ item.total | currency:'PEN':'symbol':'1.2-2' }}</td>
+            <td class="px-3 py-1 text-right">{{ item.descuento | number:'1.2-2' }}</td>
+            <td class="px-3 py-1 text-right">{{ item.utilidad | number:'1.2-2' }}</td>
+            <td class="px-3 py-1 text-right">{{ item.porcentaje | number:'1.0-2' }}</td>
+          </tr>
+          <tr *ngIf="detalleOrden.length === 0">
+            <td colspan="10" class="text-center p-4 text-gray-500">Seleccione una orden para ver el detalle.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>

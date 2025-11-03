@@ -1,0 +1,33 @@
+export interface ProductoReport {
+  codigo: number;
+  descripcion: string;
+  descripcionClase: string;
+  descripcionMarca: string;
+  descripcionUDM: string;
+  descripcionDepartamento: string;
+  desctipcionVersion: string;
+  descripcionTipoMercaderia: string;
+  codigo_de_Barra_SKU: string;
+  empaque: number;
+  peso_Unitario: number;
+  porc_Comision: number;
+  ubicacion: string;
+  codigo_Sunat: string;
+  costo_de_Compra: number;
+  soles: number;
+  existencia: number;
+  costo_Promedio: number;
+  ultima_Compra: number;
+  costo_Dolar: number;
+  tipo_IGV: number;
+  stock_Maximo: number;
+  sock_Minimo: number;
+  ultimo_Inventario:Date; 
+  tipo_Existencia: string;
+  unitario: number;
+  cat_B: number;
+  cat_A: number;
+  personalizado: string;
+  disponible: string;
+  estado: string;
+}

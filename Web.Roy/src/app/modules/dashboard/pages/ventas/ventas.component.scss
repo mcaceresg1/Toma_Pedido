@@ -1,0 +1,19 @@
+.breadcrumb-item {
+  position: relative;
+  padding-right: 20px;
+}
+.breadcrumb-item:not(:last-child)::after {
+  content: "";
+  display: inline-block;
+  color: red !important;
+  fill: red !important;
+  width: 10px; /* Adjust size */
+  height: 100%; /* Adjust size */
+  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>')
+    no-repeat center;
+  background-size: contain;
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+}
