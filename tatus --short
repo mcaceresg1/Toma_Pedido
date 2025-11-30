@@ -1,0 +1,33 @@
+[33mcommit e6ecf14eac1c5de19c737a808a09eac87033eca9[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: Marco Caceres <mcacereg@gmail.com>
+Date:   Sun Nov 30 10:03:14 2025 -0500
+
+    Actualización de componentes dashboard, API y reportes
+
+ Api.Roy/Contracts/IBcUser.cs                       |   2 [32m+[m[31m-[m
+ Api.Roy/Controllers/PedidosController.cs           |   2 [32m+[m[31m-[m
+ Api.Roy/Controllers/UserController.cs              |   6 [32m+[m[31m-[m
+ Api.Roy/Program.cs                                 |  23 [32m++[m[31m-[m
+ Api.Roy/ResourceAccess/Database/DBManager.cs       |   6 [32m+[m[31m-[m
+ Api.Roy/ResourceAccess/Database/DbConnection.cs    |  20 [32m+[m[31m-[m
+ Api.Roy/ResourceAccess/DbLogin.cs                  |   6 [32m+[m[31m-[m
+ Api.Roy/ResourceAccess/DbPedido.cs                 | 122 [32m+++++[m[31m------[m
+ Api.Roy/ResourceAccess/DbReporte.cs                |  16 [32m+[m[31m-[m
+ Api.Roy/ResourceAccess/DbUser.cs                   |  23 [32m++[m[31m-[m
+ Api.Roy/ScriptsDB/__iniciar.bat                    |  66 [32m++++++[m
+ Api.Roy/Services/BcUser.cs                         |   2 [32m+[m[31m-[m
+ Api.Roy/Utils/DataRowExtensions.cs                 |   2 [32m+[m[31m-[m
+ .../chart-forma-pago/chart-forma-pago.component.ts |   4 [32m+[m[31m-[m
+ .../chart-prod-subgrupo.component.ts               |   3 [32m+[m[31m-[m
+ .../chart-prod-vendido.component.ts                |   3 [32m+[m[31m-[m
+ .../chart-prod-vent-importe.component.ts           |   3 [32m+[m[31m-[m
+ .../chart-venta-canal.component.ts                 |   4 [32m+[m[31m-[m
+ .../modal-stock/modal-stock.component.html         |   2 [32m+[m[31m-[m
+ .../app/modules/dashboard/dashboard.component.html | 229 [32m+++++++[m[31m--------------[m
+ .../app/modules/dashboard/dashboard.component.scss | 173 [32m+++++++++++++++[m[31m-[m
+ .../app/modules/dashboard/dashboard.component.ts   |  16 [32m++[m
+ .../pages/orden-pedido/orden-pedido.component.html |   4 [32m+[m[31m-[m
+ .../reporte-productos.component.ts                 |   4 [32m+[m[31m-[m
+ .../reporte-proveedor.component.ts                 |   8 [31m-[m
+ .../gestion-ventas-page.component.ts               |   8 [32m+[m[31m-[m
+ 26 files changed, 474 insertions(+), 283 deletions(-)
