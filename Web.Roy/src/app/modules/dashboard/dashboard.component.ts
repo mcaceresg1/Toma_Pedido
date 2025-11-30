@@ -54,6 +54,10 @@ export class DashboardComponent implements OnInit {
   userEmpresas = signal<Empresa[]>([]);
   _snackbar = inject(MatSnackBar);
   mostrarImpuesto = signal<boolean>(false);
+  
+  // Estados de expansión de menús
+  ventasExpanded: boolean = false;
+  comprasExpanded: boolean = false;
 
   roles: Rol[] = [
     {
@@ -194,6 +198,18 @@ export class DashboardComponent implements OnInit {
       (success) => console.log('>>> Navegación exitosa:', success),
       (error) => console.error('>>> Error en navegación:', error)
     );
+    // Cerrar menú en móvil después de navegar
+    if (this.isSmallScreen) {
+      this.opened = false;
+    }
+  }
+
+  toggleVentas(): void {
+    this.ventasExpanded = !this.ventasExpanded;
+  }
+
+  toggleCompras(): void {
+    this.comprasExpanded = !this.comprasExpanded;
   }
 
   // getPermisos(menu: string) {

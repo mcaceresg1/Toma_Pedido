@@ -11,7 +11,7 @@ namespace ApiRoy.ResourceAccess
     {
         private readonly DBManager db;
         public DbConnection? DbConn { get; set; }
-        private static IConfiguration? _StaticConfig { get; set; }
+        private static IConfiguration _StaticConfig { get; set; } = null!;
         private readonly IWebHostEnvironment _environment;
         private string DbConnString { get; set; } = string.Empty;
 
@@ -21,16 +21,16 @@ namespace ApiRoy.ResourceAccess
             _StaticConfig = config;
             if (this._environment.IsDevelopment())
             {
-                DbConnString = _StaticConfig.GetConnectionString("DevConnStringDbLogin");
+                DbConnString = _StaticConfig.GetConnectionString("DevConnStringDbLogin") ?? throw new InvalidOperationException("DevConnStringDbLogin no está configurado");
             }
             else
             {
-                DbConnString = _StaticConfig.GetConnectionString("OrgConnStringDbLogin");
+                DbConnString = _StaticConfig.GetConnectionString("OrgConnStringDbLogin") ?? throw new InvalidOperationException("OrgConnStringDbLogin no está configurado");
             }
             db = new DBManager(DbConnString);
         }
 
-        public async Task<EcUsuario?> GetUser(string user)
+        public Task<EcUsuario?> GetUser(string user)
         {
             try
             {
@@ -58,9 +58,9 @@ namespace ApiRoy.ResourceAccess
                 var result = db.ObtieneLista("USP_USUARIO", GetItemDelegate, parametros);
                 if (result == null || result.Count == 0 || result[0] == null)
                 {
-                    return null;
+                    return Task.FromResult<EcUsuario?>(null);
                 }
-                return result[0];
+                return Task.FromResult<EcUsuario?>(result[0]);
 
             }
             catch (Exception ex)
@@ -69,7 +69,7 @@ namespace ApiRoy.ResourceAccess
             }
         }
 
-        public async Task<List<EcEmpresa>> ObtenerEmpresas(string usuario)
+        public Task<List<EcEmpresa>> ObtenerEmpresas(string usuario)
         {
             try
             {
@@ -91,7 +91,7 @@ namespace ApiRoy.ResourceAccess
                 Func<DataRow, EcEmpresa> GetItemDelegate = GetItem;
 
                 var result = db.ObtieneLista("ST_OBTENER_EMPRESAS_USUARIO", GetItemDelegate, parametros);
-                return result;
+                return Task.FromResult(result);
 
             }
             catch (Exception ex)
@@ -100,7 +100,7 @@ namespace ApiRoy.ResourceAccess
             }
         }
 
-        public async Task<EcEmpresa> ObtenerEmpresa(string usuario)
+        public Task<EcEmpresa> ObtenerEmpresa(string usuario)
         {
             try
             {
@@ -136,7 +136,7 @@ namespace ApiRoy.ResourceAccess
                 }
                 else
                 {
-                    return result[0];
+                    return Task.FromResult(result[0]);
                 }
 
             }
@@ -146,7 +146,7 @@ namespace ApiRoy.ResourceAccess
             }
         }
 
-        public async Task CambiarEmpresa(string usuario, string codigo)
+        public Task CambiarEmpresa(string usuario, string codigo)
         {
             try
             {
@@ -158,6 +158,7 @@ namespace ApiRoy.ResourceAccess
                 };
 
                 var result = db.ObtieneNQ("ST_CAMBIAR_EMPRESA", parametros);
+                return Task.CompletedTask;
             }
             catch (Exception ex)
             {

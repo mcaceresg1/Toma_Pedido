@@ -10,9 +10,6 @@ import { ChartProdVentImporteComponent } from '../../components/chart-prod-vent-
 import { ChartProdSubgrupoComponent } from '../../components/chart-prod-subgrupo/chart-prod-subgrupo.component';
 import { NgxSpinnerService } from 'ngx-spinner';
 import {
-  NgLabelTemplateDirective,
-  NgOptionTemplateDirective,
-  NgSelectComponent,
   NgSelectModule,
 } from '@ng-select/ng-select';
 import { FormsModule } from '@angular/forms';
@@ -22,10 +19,9 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './gestion-ventas-page.component.html',
   styleUrls: ['./gestion-ventas-page.component.scss'],
   imports: [
-    NgLabelTemplateDirective,
-    NgOptionTemplateDirective,
-    NgSelectComponent,
+    NgSelectModule,
     FormsModule,
+    CommonModule,
     CabTotalesComponent,
     ChartVentaCanalComponent,
     ChartFormaPagoComponent,

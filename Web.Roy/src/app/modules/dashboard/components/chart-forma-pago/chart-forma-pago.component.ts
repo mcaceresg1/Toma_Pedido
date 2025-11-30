@@ -1,4 +1,4 @@
-import { formatCurrency } from '@angular/common';
+import { formatCurrency, CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import {
   ApexNonAxisChartSeries,
@@ -13,7 +13,7 @@ import {
   selector: 'app-chart-forma-pago',
   templateUrl: './chart-forma-pago.component.html',
   styleUrls: ['./chart-forma-pago.component.scss'],
-  imports: [NgApexchartsModule],
+  imports: [NgApexchartsModule, CommonModule],
 })
 export class ChartFormaPagoComponent implements OnInit {
   chartTitle?: ApexTitleSubtitle;

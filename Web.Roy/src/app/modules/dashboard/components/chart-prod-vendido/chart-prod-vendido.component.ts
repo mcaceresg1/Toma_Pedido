@@ -1,4 +1,5 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import {
   ApexAxisChartSeries,
   ApexChart,
@@ -27,7 +28,7 @@ type ApexXAxis = {
   selector: 'app-chart-prod-vendido',
   templateUrl: './chart-prod-vendido.component.html',
   styleUrls: ['./chart-prod-vendido.component.scss'],
-  imports: [NgApexchartsModule],
+  imports: [NgApexchartsModule, CommonModule],
 })
 export class ChartProdVendidoComponent implements OnInit {
   chartTitle?: ApexTitleSubtitle;

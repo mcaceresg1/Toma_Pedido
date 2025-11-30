@@ -60,10 +60,11 @@ namespace ApiRoy
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
+                    var secretKey = builder.Configuration["JWT:SECRET_KEY"] ?? throw new InvalidOperationException("JWT:SECRET_KEY no está configurado");
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidateIssuerSigningKey = true,
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JWT:SECRET_KEY"])),
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
                         ValidateIssuer = true,
                         ValidateAudience = true,
                         ValidIssuer = builder.Configuration["JWT:Issuer"],
@@ -231,7 +232,25 @@ namespace ApiRoy
                 Predicate = (_) => false
             });
             
-                app.Run();
+            // Log de inicio completo
+            Log.Information("═══════════════════════════════════════════════════════");
+            Log.Information("✅ Backend API iniciado correctamente");
+            Log.Information("🌐 URLs disponibles:");
+            if (app.Environment.IsDevelopment())
+            {
+                Log.Information("   HTTP:  http://localhost:5070");
+                Log.Information("   HTTPS: https://localhost:7281");
+                Log.Information("   📚 Swagger: http://localhost:5070/swagger");
+            }
+            else
+            {
+                var appUrls = builder.Configuration["applicationUrl"] ?? "https://apitp.nexwork-peru.com";
+                Log.Information("   Producción: {Urls}", appUrls);
+            }
+            Log.Information("🏥 Health Check: http://localhost:5070/health");
+            Log.Information("═══════════════════════════════════════════════════════");
+            
+            app.Run();
             }
             catch (Exception ex)
             {

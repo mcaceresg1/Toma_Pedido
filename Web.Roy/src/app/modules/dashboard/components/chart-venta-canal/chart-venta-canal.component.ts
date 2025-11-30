@@ -1,4 +1,4 @@
-import { formatCurrency } from '@angular/common';
+import { formatCurrency, CommonModule } from '@angular/common';
 import {
   ApexTitleSubtitle,
   ApexPlotOptions,
@@ -16,7 +16,7 @@ import {
   selector: 'app-chart-venta-canal',
   templateUrl: './chart-venta-canal.component.html',
   styleUrls: ['./chart-venta-canal.component.scss'],
-  imports: [NgApexchartsModule],
+  imports: [NgApexchartsModule, CommonModule],
 })
 export class ChartVentaCanalComponent implements OnInit {
   chartTitle?: ApexTitleSubtitle;

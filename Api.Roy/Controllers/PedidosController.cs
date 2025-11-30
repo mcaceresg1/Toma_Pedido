@@ -106,7 +106,7 @@
             {
                 var user = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
                 if (user == null) { return Unauthorized(); }
-                var response = await _bcPedido.GetClientes(user, criterio);
+                var response = await _bcPedido.GetClientes(user, criterio ?? string.Empty);
                 return StatusCode(StatusCodes.Status200OK, response);
             }
             catch (Exception ex)

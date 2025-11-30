@@ -63,7 +63,7 @@ namespace ApiRoy.ResourceAccess.Database
         {
             try
             {
-                return DbConn.EjecutarNonQuery(SP, args);
+                return DbConn.EjecutarNonQuery(SP, args ?? new List<DbParametro>());
             }
             catch (Exception ex)
             {
@@ -77,7 +77,7 @@ namespace ApiRoy.ResourceAccess.Database
         /// <param name="SP">Procedimiento almacenado</param>
         /// <param name="param">Lista de parametros SQL</param>
         /// <returns>Valor numérico</returns>
-        public object ObtieneScalar(string SP, List<DbParametro> param)
+        public object? ObtieneScalar(string SP, List<DbParametro> param)
         {
             try
             {
@@ -95,7 +95,7 @@ namespace ApiRoy.ResourceAccess.Database
         /// <param name="SP">Procedimiento almacenado</param>
         /// <param name="param">Lista de parametros SQL</param>
         /// <returns>Valor numérico</returns>
-        public object ObtieneScalar(string SP)
+        public object? ObtieneScalar(string SP)
         {
             try
             {

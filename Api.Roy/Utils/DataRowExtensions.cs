@@ -10,7 +10,7 @@ namespace ApiRoy.Utils
             if (!row.Table.Columns.Contains(column) || row.IsNull(column))
                 return string.Empty;
 
-            return row[column].ToString();
+            return row[column].ToString() ?? string.Empty;
         }
 
         public static int GetInt(this DataRow row, string column)

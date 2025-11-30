@@ -107,8 +107,8 @@
     <!-- Tabla detalle de orden seleccionada -->
     <div *ngIf="ordenSeleccionada" class="overflow-x-auto border rounded shadow max-h-[300px]">
       <h3 class="font-semibold mb-2 px-3">
-        Detalle de la Orden: {{ ordenSeleccionada?.factura || ordenSeleccionada?.guia || ('#' +
-        ordenSeleccionada?.operacion) }}
+        Detalle de la Orden: {{ ordenSeleccionada.factura || ordenSeleccionada.guia || ('#' +
+        ordenSeleccionada.operacion) }}
         - Items ({{ detalleOrden.length }})
       </h3>
       <table class="min-w-full text-sm text-left text-gray-800">

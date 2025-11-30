@@ -13,7 +13,7 @@
     public class DbPedido : IDbPedido
     {
         private readonly DBManager dbData;
-        private static IConfiguration _StaticConfig { get; set; }
+        private static IConfiguration _StaticConfig { get; set; } = null!;
         private readonly IWebHostEnvironment _environment;
 
         public DbPedido(IConfiguration config, IWebHostEnvironment environment)
@@ -22,33 +22,35 @@
             this._environment = environment;
             if (this._environment.IsDevelopment())
             {
-                dbData = new DBManager(_StaticConfig.GetConnectionString("DevConnStringDbData"));
+                var connString = _StaticConfig.GetConnectionString("DevConnStringDbData") ?? throw new InvalidOperationException("DevConnStringDbData no está configurado");
+                dbData = new DBManager(connString);
             }
             else
             {
-                dbData = new DBManager(_StaticConfig.GetConnectionString("OrgConnStringDbData"));
+                var connString = _StaticConfig.GetConnectionString("OrgConnStringDbData") ?? throw new InvalidOperationException("OrgConnStringDbData no está configurado");
+                dbData = new DBManager(connString);
             }
         }
 
-        public async Task<List<EcPedidos>> GetPedidos(EcFiltroPedido f, string usuario, int numPag, int allReg, int cantFilas)
+        public Task<List<EcPedidos>> GetPedidos(EcFiltroPedido f, string usuario, int numPag, int allReg, int cantFilas)
         {
 
             EcPedidos GetItem(DataRow r)
             {
                 return new EcPedidos()
                 {
-                    NumPedido = r["NUM_PED"].ToString(),
-                    FechaPedido = r["FEC_PED"].ToString(),
-                    RucCliente = r["RUC_CLI"].ToString(),
-                    DesCliente = r["DES_CLI"].ToString(),
-                    DirCliente = r["DIR_CLI"].ToString(),
-                    Moneda = r["MONEDA"].ToString(),
-                    AbrMoneda = r["ABR_MONEDA"].ToString(),
+                    NumPedido = r["NUM_PED"].ToString() ?? string.Empty,
+                    FechaPedido = r["FEC_PED"].ToString() ?? string.Empty,
+                    RucCliente = r["RUC_CLI"].ToString() ?? string.Empty,
+                    DesCliente = r["DES_CLI"].ToString() ?? string.Empty,
+                    DirCliente = r["DIR_CLI"].ToString() ?? string.Empty,
+                    Moneda = r["MONEDA"].ToString() ?? string.Empty,
+                    AbrMoneda = r["ABR_MONEDA"].ToString() ?? string.Empty,
                     CodVendedor = Convert.ToInt32(r["CDG_VEND"]),
                     Subtotal = Convert.ToDouble(r["IMP_STOT"]),
                     Igv = Convert.ToDouble(r["IMP_IGV"]),
                     Total = Convert.ToDouble(r["IMP_TTOT"]),
-                    Estado = r["SWT_PED"].ToString(),
+                    Estado = r["SWT_PED"].ToString() ?? string.Empty,
                     TotalPagina = Convert.ToInt32(r["TOTALPAGINAS"]),
                     TotalReg = Convert.ToInt32(r["TOTAL"]),
                     Item = Convert.ToInt32(r["ITEM"]),
@@ -67,41 +69,41 @@
                 var parametros = new List<DbParametro>()
                 {
                      new DbParametro("@ID_USUARIO", SqlDbType.VarChar, ParameterDirection.Input, usuario),
-                     new DbParametro("@BUSQUEDA", SqlDbType.VarChar, ParameterDirection.Input, f.Busqueda),
+                     new DbParametro("@BUSQUEDA", SqlDbType.VarChar, ParameterDirection.Input, f.Busqueda ?? string.Empty),
                      new DbParametro("@NUM_PAGINA", SqlDbType.Int, ParameterDirection.Input, numPag),
                      new DbParametro("@ALL_REG", SqlDbType.Int, ParameterDirection.Input, allReg),
                      new DbParametro("@CANT_FILAS", SqlDbType.Int, ParameterDirection.Input, cantFilas),
                      new DbParametro("@DATE_START", SqlDbType.Date, ParameterDirection.Input, dateInicio),
                      new DbParametro("@DATE_END", SqlDbType.Date, ParameterDirection.Input, dateFin),
-                     new DbParametro("@ESTADO", SqlDbType.Char, ParameterDirection.Input, f.Estado),
+                     new DbParametro("@ESTADO", SqlDbType.Char, ParameterDirection.Input, f.Estado ?? string.Empty),
                 };
 
                 Func<DataRow, EcPedidos> GetItemDelegate = GetItem;
-                return dbData.ObtieneLista("USP_CONSULTA_PEDIDOS", GetItemDelegate, parametros);
+                return Task.FromResult(dbData.ObtieneLista("USP_CONSULTA_PEDIDOS", GetItemDelegate, parametros));
             }
             catch (Exception ex)
             {
                 throw new Exception(ex.Message, ex);
             }
         }
-        public async Task<EcPedidos?> GetPedido(string usuario, string operacion)
+        public Task<EcPedidos?> GetPedido(string usuario, string operacion)
         {
             EcPedidos GetItem(DataRow r)
             {
                 return new EcPedidos()
                 {
-                    NumPedido = r["NUM_PED"].ToString(),
-                    FechaPedido = r["FEC_PED"].ToString(),
-                    RucCliente = r["RUC_CLI"].ToString(),
-                    DesCliente = r["DES_CLI"].ToString(),
-                    DirCliente = r["DIR_CLI"].ToString(),
-                    Moneda = r["MONEDA"].ToString(),
-                    AbrMoneda = r["ABR_MONEDA"].ToString(),
+                    NumPedido = r["NUM_PED"].ToString() ?? string.Empty,
+                    FechaPedido = r["FEC_PED"].ToString() ?? string.Empty,
+                    RucCliente = r["RUC_CLI"].ToString() ?? string.Empty,
+                    DesCliente = r["DES_CLI"].ToString() ?? string.Empty,
+                    DirCliente = r["DIR_CLI"].ToString() ?? string.Empty,
+                    Moneda = r["MONEDA"].ToString() ?? string.Empty,
+                    AbrMoneda = r["ABR_MONEDA"].ToString() ?? string.Empty,
                     CodVendedor = Convert.ToInt32(r["CDG_VEND"]),
                     Subtotal = Convert.ToDouble(r["IMP_STOT"]),
                     Igv = Convert.ToDouble(r["IMP_IGV"]),
                     Total = Convert.ToDouble(r["IMP_TTOT"]),
-                    Estado = r["SWT_PED"].ToString(),
+                    Estado = r["SWT_PED"].ToString() ?? string.Empty,
                     TotalPagina = 1,
                     TotalReg = 1,
                     Item = Convert.ToInt32(r["ITEM"]),
@@ -130,14 +132,14 @@
 
                 Func<DataRow, EcPedidos> GetItemDelegate = GetItem;
                 var lista = dbData.ObtieneLista("USP_CONSULTA_PEDIDO", GetItemDelegate, parametros);
-                return lista.FirstOrDefault();
+                return Task.FromResult<EcPedidos?>(lista.FirstOrDefault());
             }
             catch (Exception ex)
             {
                 throw new Exception(ex.Message, ex);
             }
         }
-        public async Task<List<EcCondicion>> ObtenerCondicion(string usuario)
+        public Task<List<EcCondicion>> ObtenerCondicion(string usuario)
         {
             try
             {
@@ -146,8 +148,8 @@
 
                     return new EcCondicion()
                     {
-                        Codigo = r["CONDICION"].ToString(),
-                        Descripcion = r["DESCRIPCION"].ToString()
+                        Codigo = r["CONDICION"].ToString() ?? string.Empty,
+                        Descripcion = r["DESCRIPCION"].ToString() ?? string.Empty
                     };
 
                 }
@@ -158,7 +160,7 @@
                 Func<DataRow, EcCondicion> GetItemDelegate = GetItem;
 
                 var result = dbData.ObtieneLista("USP_CONDICION", GetItemDelegate, parametros);
-                return result;
+                return Task.FromResult(result);
 
             }
             catch (Exception ex)
@@ -166,7 +168,7 @@
                 throw new Exception(ex.Message, ex);
             }
         }
-        public async Task<List<EcUbigeo>> ObtenerUbigeos(string usuario, string busqueda)
+        public Task<List<EcUbigeo>> ObtenerUbigeos(string usuario, string busqueda)
         {
             try
             {
@@ -175,10 +177,10 @@
 
                     return new EcUbigeo()
                     {
-                        Ubigeo = r["UBIGEO"].ToString(),
-                        Departamento = r["DEPARTAMENTO"].ToString(),
-                        Distrito = r["DISTRITO"].ToString(),
-                        Provincia = r["PROVINCIA"].ToString(),
+                        Ubigeo = r["UBIGEO"].ToString() ?? string.Empty,
+                        Departamento = r["DEPARTAMENTO"].ToString() ?? string.Empty,
+                        Distrito = r["DISTRITO"].ToString() ?? string.Empty,
+                        Provincia = r["PROVINCIA"].ToString() ?? string.Empty,
                     };
 
                 }
@@ -190,7 +192,7 @@
                 Func<DataRow, EcUbigeo> GetItemDelegate = GetItem;
 
                 var result = dbData.ObtieneLista("USP_CONSULTA_UBIGEO", GetItemDelegate, parametros);
-                return result;
+                return Task.FromResult(result);
 
             }
             catch (Exception ex)
@@ -198,7 +200,7 @@
                 throw new Exception(ex.Message, ex);
             }
         }
-        public async Task<int> CrearCliente(string usuario, EcNuevoCliente cliente)
+        public Task<int> CrearCliente(string usuario, EcNuevoCliente cliente)
         {
             try
             {
@@ -219,7 +221,7 @@
                 };
 
                 var resultado = dbData.ObtieneNQ("USP_CREAR_CLIENTE", parametros);
-                return resultado;
+                return Task.FromResult(resultado);
             }
             catch (Exception ex)
             {
@@ -228,14 +230,14 @@
         }
 
 
-        public async Task<List<EcStockProductos>> GetStockProductos(EcFiltroProducto f, string usuario, string rucCliente, int numPag, int allReg, int cantFilas)
+        public Task<List<EcStockProductos>> GetStockProductos(EcFiltroProducto f, string usuario, string rucCliente, int numPag, int allReg, int cantFilas)
         {
             EcStockProductos GetItem(DataRow r)
             {
                 return new EcStockProductos()
                 {
                     CodProducto = Convert.ToInt32(r["CDG_PROD"]),
-                    NombProducto = r["DES_PROD"].ToString(),
+                    NombProducto = r["DES_PROD"].ToString() ?? string.Empty,
                     Stock = Convert.ToDouble(r["STK_ACT"]),
                     Reservado = -Convert.ToDouble(r["STK_RES"]),
                     Almacen = Convert.ToInt32(r["ALMACEN"]),
@@ -262,9 +264,9 @@
                 var parametros = new List<DbParametro>()
                 {
                      new DbParametro("@RUC_CLIENTE", SqlDbType.VarChar, ParameterDirection.Input, rucCliente),
-                     new DbParametro("@PRODUCTO", SqlDbType.VarChar, ParameterDirection.Input, f.Producto),
-                     new DbParametro("@CLASES", SqlDbType.VarChar, ParameterDirection.Input, f.Clases),
-                     new DbParametro("@ID_ALMACEN", SqlDbType.Int, ParameterDirection.Input, f.CodAlmacen),
+                     new DbParametro("@PRODUCTO", SqlDbType.VarChar, ParameterDirection.Input, f.Producto ?? string.Empty),
+                     new DbParametro("@CLASES", SqlDbType.VarChar, ParameterDirection.Input, f.Clases ?? string.Empty),
+                     new DbParametro("@ID_ALMACEN", SqlDbType.Int, ParameterDirection.Input, f.CodAlmacen ?? 0),
                      new DbParametro("@NUM_PAGINA", SqlDbType.Int, ParameterDirection.Input, numPag),
                      new DbParametro("@ALL_REG", SqlDbType.Int, ParameterDirection.Input, allReg),
                      new DbParametro("@CANT_FILAS", SqlDbType.Int, ParameterDirection.Input, cantFilas),
@@ -272,7 +274,7 @@
                 };
 
                 Func<DataRow, EcStockProductos> GetItemDelegate = GetItem;
-                return dbData.ObtieneLista("USP_STOCK_PRODUCTOS", GetItemDelegate, parametros);
+                return Task.FromResult(dbData.ObtieneLista("USP_STOCK_PRODUCTOS", GetItemDelegate, parametros));
             }
             catch (Exception ex)
             {
@@ -281,7 +283,7 @@
         }
 
 
-        public async Task<List<EcProductoPedido>> GetPedidoProductos(string usuario, string operacion)
+        public Task<List<EcProductoPedido>> GetPedidoProductos(string usuario, string operacion)
         {
             EcProductoPedido GetItem(DataRow r)
             {
@@ -309,7 +311,7 @@
                 };
 
                 Func<DataRow, EcProductoPedido> GetItemDelegate = GetItem;
-                return dbData.ObtieneLista("USP_CONSULTA_PRODUCTOS_PEDIDO", GetItemDelegate, parametros);
+                return Task.FromResult(dbData.ObtieneLista("USP_CONSULTA_PRODUCTOS_PEDIDO", GetItemDelegate, parametros));
             }
             catch (Exception ex)
             {
@@ -317,7 +319,7 @@
             }
         }
 
-        public async Task<List<EcCliente>> GetClientes(string usuario, string criterio)
+        public Task<List<EcCliente>> GetClientes(string usuario, string criterio)
         {
             EcCliente GetItem(DataRow r)
             {
@@ -338,22 +340,22 @@
                 };
 
                 Func<DataRow, EcCliente> GetItemDelegate = GetItem;
-                return dbData.ObtieneLista("USP_SESION_CLIENTES", GetItemDelegate, parametros);
+                return Task.FromResult(dbData.ObtieneLista("USP_SESION_CLIENTES", GetItemDelegate, parametros));
             }
             catch (Exception ex)
             {
                 throw new Exception(ex.Message, ex);
             }
         }
-        public async Task<List<EcTipoDoc>> GetTiposDocumento(string usuario)
+        public Task<List<EcTipoDoc>> GetTiposDocumento(string usuario)
         {
             EcTipoDoc GetItem(DataRow r)
             {
                 return new EcTipoDoc()
                 {
                     Id = Convert.ToInt32(r["ID"]),
-                    Descripcion = r["DESCRIPCION"].ToString(),
-                    Tipo = r["TIPO"].ToString()
+                    Descripcion = r["DESCRIPCION"].ToString() ?? string.Empty,
+                    Tipo = r["TIPO"].ToString() ?? string.Empty
                 };
             }
             try
@@ -364,7 +366,7 @@
                 };
 
                 Func<DataRow, EcTipoDoc> GetItemDelegate = GetItem;
-                return dbData.ObtieneLista("USP_SESION_DOCUMENTOS", GetItemDelegate, parametros);
+                return Task.FromResult(dbData.ObtieneLista("USP_SESION_DOCUMENTOS", GetItemDelegate, parametros));
             }
             catch (Exception ex)
             {
@@ -372,7 +374,7 @@
             }
         }
 
-        public async Task<List<EcSelect>> GetMonedas()
+        public Task<List<EcSelect>> GetMonedas()
         {
             EcSelect GetItem(DataRow r)
             {
@@ -387,7 +389,7 @@
             {
 
                 Func<DataRow, EcSelect> GetItemDelegate = GetItem;
-                return dbData.ObtieneLista("USP_SESION_MONEDAS", GetItemDelegate);
+                return Task.FromResult(dbData.ObtieneLista("USP_SESION_MONEDAS", GetItemDelegate));
             }
             catch (Exception ex)
             {
@@ -586,7 +588,6 @@
                         transaction.Rollback();
                         throw;
                     }
-                    return false;
                 }
             }
         }
@@ -715,11 +716,10 @@
                         transaction.Rollback();
                         throw;
                     }
-                    return false;
                 }
             }
         }
-        public async Task<List<EcHistoricoPedidoCabecera>> GetHistoricoPedidosCabecera(
+        public Task<List<EcHistoricoPedidoCabecera>> GetHistoricoPedidosCabecera(
             DateTime? fechaInicio = null,
             DateTime? fechaFin = null,
             int? vendedorId = null)
@@ -756,7 +756,7 @@
 
                 var result = dbData.ObtieneLista("SP_HISTORICO_ORDEN_PEDIDO_CABECERA", GetItem, parametros);
 
-                return result; // O si quieres que sea async: return await Task.FromResult(result);
+                return Task.FromResult(result);
             }
             catch (Exception ex)
             {
@@ -765,7 +765,7 @@
         }
 
 
-        public async Task<List<EcHistoricoPedidoDetalle>> GetHistoricoPedidosDetalle(int nroOperacion)
+        public Task<List<EcHistoricoPedidoDetalle>> GetHistoricoPedidosDetalle(int nroOperacion)
         {
             try
             {
@@ -796,7 +796,7 @@
                 Func<DataRow, EcHistoricoPedidoDetalle> GetItemDelegate = GetItem;
 
                 var result = dbData.ObtieneLista("SP_HISTORICO_ORDEN_PEDIDO_CABECERA_X_DETALLE", GetItemDelegate, parametros);
-                return await Task.FromResult(result);
+                return Task.FromResult(result);
             }
             catch (Exception ex)
             {
@@ -804,7 +804,7 @@
             }
         }
 
-        public async Task<List<EcFiltroVendedor>> GetVendedores()
+        public Task<List<EcFiltroVendedor>> GetVendedores()
         {
             try
             {
@@ -816,7 +816,7 @@
                 };
 
                 var result = dbData.ObtieneLista("SP_GET_VENDEDORES_FILTRADOS", MapearVendedor, null);
-                return await Task.FromResult(result);
+                return Task.FromResult(result);
             }
             catch (Exception ex)
             {

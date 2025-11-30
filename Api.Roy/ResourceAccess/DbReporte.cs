@@ -10,7 +10,7 @@ namespace ApiRoy.ResourceAccess
     public class DbReporte : IDbReporte
     {
         private readonly DBManager dbData;
-        private static IConfiguration _StaticConfig { get; set; }
+        private static IConfiguration _StaticConfig { get; set; } = null!;
         private readonly IWebHostEnvironment _environment;
         public DbReporte(IConfiguration config, IWebHostEnvironment environment)
         {
@@ -18,14 +18,16 @@ namespace ApiRoy.ResourceAccess
             this._environment = environment;
             if (this._environment.IsDevelopment())
             {
-                dbData = new DBManager(_StaticConfig.GetConnectionString("DevConnStringDbData"));
+                var connString = _StaticConfig.GetConnectionString("DevConnStringDbData") ?? throw new InvalidOperationException("DevConnStringDbData no está configurado");
+                dbData = new DBManager(connString);
             }
             else
             {
-                dbData = new DBManager(_StaticConfig.GetConnectionString("OrgConnStringDbData"));
+                var connString = _StaticConfig.GetConnectionString("OrgConnStringDbData") ?? throw new InvalidOperationException("OrgConnStringDbData no está configurado");
+                dbData = new DBManager(connString);
             }
         }
-        public async Task<List<EcProductoDto>> GetProductoReport()
+        public Task<List<EcProductoDto>> GetProductoReport()
         {
             EcProductoDto GetItem(DataRow r)
             {
@@ -68,7 +70,7 @@ namespace ApiRoy.ResourceAccess
             {
 
                 Func<DataRow, EcProductoDto> GetItemDelegate = GetItem;
-                return dbData.ObtieneLista("USP_GET_REPORTE_PRODUCTO", GetItemDelegate);
+                return Task.FromResult(dbData.ObtieneLista("USP_GET_REPORTE_PRODUCTO", GetItemDelegate));
             }
             catch (Exception ex)
             {
@@ -76,7 +78,7 @@ namespace ApiRoy.ResourceAccess
             }
         }
 
-        public async Task<List<EcProveedorDpto>> GetProveedorReport()
+        public Task<List<EcProveedorDpto>> GetProveedorReport()
         {
             EcProveedorDpto GetItem(DataRow r)
             {
@@ -113,7 +115,7 @@ namespace ApiRoy.ResourceAccess
             {
 
                 Func<DataRow, EcProveedorDpto> GetItemDelegate = GetItem;
-                return dbData.ObtieneLista("USP_GET_REPORTE_PROVEEDOR", GetItemDelegate);
+                return Task.FromResult(dbData.ObtieneLista("USP_GET_REPORTE_PROVEEDOR", GetItemDelegate));
             }
             catch (Exception ex)
             {

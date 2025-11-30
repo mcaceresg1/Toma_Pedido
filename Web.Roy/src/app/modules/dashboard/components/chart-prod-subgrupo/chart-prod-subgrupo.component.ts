@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import {
   ApexAxisChartSeries,
   ApexChart,
@@ -13,7 +14,7 @@ import {
   selector: 'app-chart-prod-subgrupo',
   templateUrl: './chart-prod-subgrupo.component.html',
   styleUrls: ['./chart-prod-subgrupo.component.scss'],
-  imports: [NgApexchartsModule],
+  imports: [NgApexchartsModule, CommonModule],
 })
 export class ChartProdSubgrupoComponent implements OnInit {
   chartTitle?: ApexTitleSubtitle;

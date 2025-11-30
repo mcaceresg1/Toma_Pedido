@@ -41,16 +41,16 @@ namespace ApiRoy.Controllers
         [Authorize]
         [HttpGet]
         [Route("GetConnectionDetails")]
-        public async Task<IActionResult> GetConnectionDetails()
+        public Task<IActionResult> GetConnectionDetails()
         {
             try
             {
                 var response = _bcUser.GetConnectionDetails();
                 if (response != null)
                 {
-                    return StatusCode(StatusCodes.Status200OK, response);
+                    return Task.FromResult<IActionResult>(StatusCode(StatusCodes.Status200OK, response));
                 }
-                return Unauthorized();
+                return Task.FromResult<IActionResult>(Unauthorized());
             }
             catch (Exception ex)
             {

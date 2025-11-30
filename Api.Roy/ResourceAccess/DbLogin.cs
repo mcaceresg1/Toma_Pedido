@@ -27,7 +27,7 @@
             db = new DBManager(DbConnString ?? throw new InvalidOperationException("Connection string not configured"));
         }
 
-        public async Task<EcLoginResult?> Login(EcLogin ecLogin)
+        public Task<EcLoginResult?> Login(EcLogin ecLogin)
         {
             try
             {
@@ -56,9 +56,9 @@
                 var result = db.ObtieneLista("USP_SESION_USUARIO", GetItemDelegate, parametros);
                 if (result == null || result.Count == 0)
                 {
-                    return null;
+                    return Task.FromResult<EcLoginResult?>(null);
                 }
-                return result[0];
+                return Task.FromResult<EcLoginResult?>(result[0]);
 
             }
             catch (Exception ex)

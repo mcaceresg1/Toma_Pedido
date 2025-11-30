@@ -25,13 +25,13 @@
 
         #endregion
 
-        private string cadCon { get; set; }
+        private string cadCon { get; set; } = string.Empty;
 
-        private SqlCommand cmd { get; set; }
+        private SqlCommand? cmd { get; set; }
 
-        public SqlConnection conn { get; set; }
+        public SqlConnection conn { get; set; } = null!;
 
-        private SqlDataAdapter da { get; set; }
+        private SqlDataAdapter? da { get; set; }
 
         public DbConnection(string cadenaConexion)
         {
@@ -211,9 +211,9 @@
             return res;
         }
 
-        public object EjecutarScalar(string storedProcedure)
+        public object? EjecutarScalar(string storedProcedure)
         {
-            object res = null;
+            object? res = null;
             cmd = new SqlCommand(storedProcedure, conn);
 
             try
@@ -232,9 +232,9 @@
             return res;
         }
 
-        public object EjecutarScalar(string storedProcedure, List<DbParametro> lsParametros)
+        public object? EjecutarScalar(string storedProcedure, List<DbParametro> lsParametros)
         {
-            object res = null;
+            object? res = null;
             cmd = new SqlCommand(storedProcedure, conn);
             cmd.CommandType = CommandType.StoredProcedure;
 
@@ -369,13 +369,13 @@
         /// <param name="recuperador">Función para procesar los DataRows regresados</param>
         /// <param name="args">Lista de parametros SQL.</param>
         /// <returns>Lista de instancias.</returns>
-        public List<T> StoreProcedureToList<T>(string SP, Func<DataRow, T> recuperador, List<DbParametro> args = null)
+        public List<T> StoreProcedureToList<T>(string SP, Func<DataRow, T> recuperador, List<DbParametro>? args = null)
         {
             List<T> ls = new List<T>();
 
             try
             {
-                DataTable dt = null;
+                DataTable? dt = null;
 
                 if (args != null)
                 {

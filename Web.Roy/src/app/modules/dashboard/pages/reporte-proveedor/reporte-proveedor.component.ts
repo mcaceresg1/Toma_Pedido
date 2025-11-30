@@ -1,12 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import {
   CommonModule,
-  CurrencyPipe,
   DecimalPipe,
   DatePipe,
   NgFor,
-  AsyncPipe,
-  NgClass,
 } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgxPaginationModule } from 'ngx-pagination';
@@ -29,15 +26,10 @@ import { exportToExcel } from '../../../../shared/util/exportarExcel';
   imports: [
     CommonModule,
     NgFor,
-    AsyncPipe,
-    CurrencyPipe,
     DecimalPipe,
     DatePipe,
     FormsModule,
     NgxPaginationModule,
-    FormsModule,
-    NgClass,
-    CommonModule,
     MatToolbarModule,
     MatMenuModule,
   ],

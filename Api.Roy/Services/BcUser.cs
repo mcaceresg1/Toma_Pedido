@@ -24,7 +24,7 @@
             }
         }
 
-        public async Task<EcUsuario> GetUser(string user)
+        public async Task<EcUsuario?> GetUser(string user)
         {
             try
             {

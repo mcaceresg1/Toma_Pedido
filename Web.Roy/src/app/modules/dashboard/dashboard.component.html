@@ -7,163 +7,90 @@
     style="background-color: #190627"
   >
     <nav class="w-full h-full flex flex-col">
-      <div class="w-full flex flex-row items-start justify-center">
-        <div class="flex-1 flex items-center justify-center pt-8 relative">
-          <img
-            class="max-w-32 flex-1"
-            src="/assets/images/Logo_nexwork_ERP_WHITE.png"
-            alt="login"
-            width="100%"
-          />
-          <button
-            mat-icon-button
-            (click)="toggleDrawer()"
-            class="text-xl !text-white !absolute top-3 right-2"
-          >
-            <mat-icon>{{ opened ? "arrow_back" : "menu" }}</mat-icon>
-          </button>
-        </div>
+      <!-- Logo del sidebar -->
+      <div class="sidebar-logo">
+        <img
+          class="logo-image"
+          src="/assets/images/Logo_nexwork_ERP_WHITE.png"
+          alt="Nexwork ERP"
+          (click)="navegarA('/home')"
+          title="Ir al Home"
+        />
+        <button
+          mat-icon-button
+          (click)="toggleDrawer()"
+          class="menu-toggle-btn"
+        >
+          <mat-icon>{{ opened ? "arrow_back" : "menu" }}</mat-icon>
+        </button>
       </div>
 
-      <div class="w-full">
-        <div class="pt-4 pl-3 flex flex-col w-full">
+      <nav class="sidebar-nav">
+        <ul class="menu-list">
           <!-- INICIO -->
-          <div class="w-full flex flex-col justify-start items-start">
-            <button
-              mat-button
-              class="!text-neutral-400"
-              [routerLink]="['/home']"
-              routerLinkActive="active"
-              *ngIf="getPermisos('Ventas')"
-            >
-              <mat-icon>home</mat-icon>Home
-            </button>
+          <li class="menu-item" *ngIf="getPermisos('Ventas')">
+            <a class="menu-item-content" [routerLink]="['/home']" routerLinkActive="active">
+              <mat-icon class="menu-icon">home</mat-icon>
+              <span class="menu-text">Home</span>
+            </a>
+          </li>
 
-            <!-- <button mat-button [routerLink]="['/dashboard/pages/ventas']" routerLinkActive="active"
-              *ngIf="getPermisos('Ventas')" class="!text-neutral-400">
-              <mat-icon>real_estate_agent</mat-icon>Ventas
-            </button> -->
+          <!-- VENTAS CON SUBMENÚ -->
+          <li class="menu-item has-submenu" [class.expanded]="ventasExpanded" *ngIf="getPermisos('Ventas')">
+            <div class="menu-item-content" (click)="toggleVentas()">
+              <mat-icon class="menu-icon">real_estate_agent</mat-icon>
+              <span class="menu-text">Ventas</span>
+              <mat-icon class="expand-icon">{{ ventasExpanded ? 'expand_less' : 'expand_more' }}</mat-icon>
+            </div>
+            <ul class="submenu-list" *ngIf="ventasExpanded">
+              <li class="menu-item">
+                <a class="menu-item-content submenu-item" (click)="navegarA('/dashboard/pages/addpedido')">
+                  <mat-icon class="menu-icon">add_shopping_cart</mat-icon>
+                  <span class="menu-text">Registro Pedido</span>
+                </a>
+              </li>
+              <li class="menu-item">
+                <a class="menu-item-content submenu-item" (click)="navegarA('/dashboard/pages/ordenPedidos')">
+                  <mat-icon class="menu-icon">list_alt</mat-icon>
+                  <span class="menu-text">Reporte Pedidos</span>
+                </a>
+              </li>
+            </ul>
+          </li>
 
-            <!-- VENTAS CON SUBMENÚ -->
-            <button
-              mat-button
-              [matMenuTriggerFor]="ventasMenu"
-              *ngIf="getPermisos('Ventas')"
-              class="!text-neutral-400"
-            >
-              <mat-icon>real_estate_agent</mat-icon>
-              <div class="flex flex-row items-center !text-neutral-400">
-                Ventas
-                <mat-icon class="ml-3 text-neutral-400"
-                  >keyboard_arrow_down</mat-icon
-                >
-              </div>
-            </button>
-
-            <mat-menu #ventasMenu="matMenu">
-              <button
-                mat-menu-item
-                (click)="navegarA('/dashboard/pages/addpedido')"
-                *ngIf="getPermisos('Ventas')"
-                class="!text-neutral-800"
-              >
-                Registro Pedido
-              </button>
-              <button
-                mat-menu-item
-                (click)="navegarA('/dashboard/pages/ordenPedidos')"
-                *ngIf="getPermisos('Ventas')"
-                class="!text-neutral-800"
-              >
-                Reporte Pedidos
-              </button>
-            </mat-menu>
-
-            <!-- COMPRAS -->
-            <button
-              mat-button
-              [matMenuTriggerFor]="menu"
-              *ngIf="getPermisos('Resportes')"
-              class="!text-neutral-400"
-            >
-              <mat-icon>bar_chart</mat-icon>
-
-              <div class="flex flex-row items-center !text-neutral-400">
-                Compras<mat-icon class="ml-3 text-neutral-400"
-                  >keyboard_arrow_down</mat-icon
-                >
-              </div>
-            </button>
-            <mat-menu #menu="matMenu">
-              <button
-                mat-menu-item
-                [routerLink]="['/dashboard/pages/reporteProductos']"
-                routerLinkActive="active"
-                *ngIf="getPermisos('Reportes')"
-                class="!text-neutral-800"
-              >
-                Reporte Productos
-              </button>
-              <button
-                mat-menu-item
-                [routerLink]="['/dashboard/pages/reporteProveedor']"
-                routerLinkActive="active"
-                *ngIf="getPermisos('Reportes')"
-                class="!text-neutral-800"
-              >
-                Reporte Proveedor
-              </button>
-            </mat-menu>
-            <!-- 
-            <button
-              mat-button
-              [routerLink]="['/dashboard/pages/clientes']"
-              routerLinkActive="active"
-              *ngIf="getPermisos('Clientes')"
-              class="!text-neutral-400"
-            >
-              <mat-icon>add_business</mat-icon>Clientes
-            </button> -->
-
-            <!-- <button
-              mat-button
-              [matMenuTriggerFor]="menu"
-              *ngIf="getPermisos('GestionVentas')"
-              class="!text-neutral-400"
-            >
-              <mat-icon>real_estate_agent</mat-icon>
-
-              <div class="flex flex-row items-center !text-neutral-400">
-                Reportes<mat-icon class="ml-3 text-neutral-400"
-                  >keyboard_arrow_down</mat-icon
-                >
-              </div>
-            </button>
-            <mat-menu #menu="matMenu">
-              <button
-                mat-menu-item
-                [routerLink]="['/dashboard/reportes/gestionVentas']"
-                routerLinkActive="active"
-                *ngIf="getPermisos('GestionVentas')"
-                class="!text-neutral-800"
-              >
-                Gestión de Ventas
-              </button>
-            </mat-menu> -->
-          </div>
-
-          <!-- REPORTES -->
+          <!-- COMPRAS -->
+          <li class="menu-item has-submenu" [class.expanded]="comprasExpanded" *ngIf="getPermisos('Resportes')">
+            <div class="menu-item-content" (click)="toggleCompras()">
+              <mat-icon class="menu-icon">bar_chart</mat-icon>
+              <span class="menu-text">Compras</span>
+              <mat-icon class="expand-icon">{{ comprasExpanded ? 'expand_less' : 'expand_more' }}</mat-icon>
+            </div>
+            <ul class="submenu-list" *ngIf="comprasExpanded">
+              <li class="menu-item">
+                <a class="menu-item-content submenu-item" [routerLink]="['/dashboard/pages/reporteProductos']" routerLinkActive="active">
+                  <mat-icon class="menu-icon">inventory</mat-icon>
+                  <span class="menu-text">Reporte Productos</span>
+                </a>
+              </li>
+              <li class="menu-item">
+                <a class="menu-item-content submenu-item" [routerLink]="['/dashboard/pages/reporteProveedor']" routerLinkActive="active">
+                  <mat-icon class="menu-icon">local_shipping</mat-icon>
+                  <span class="menu-text">Reporte Proveedor</span>
+                </a>
+              </li>
+            </ul>
+          </li>
+        </ul>
+      </nav>
+      
+      <!-- Footer del sidebar -->
+      <div class="sidebar-footer">
+        <div class="connection-info">
+          <span class="connection-label">Conexión:</span>
+          <span class="connection-value">{{ connectionDetails() }}</span>
         </div>
-      </div>
-      <div class="mt-auto">
-        <div class="flex flex-col px-4 py-2 flex-wrap">
-          <span class="poppins-regular text-neutral-400">Conexión:</span>
-          <span class="text-neutral-500 text-sm">{{
-            connectionDetails()
-          }}</span>
-        </div>
-        <div class="bg-black bg-opacity-50 px-4 py-3 text-neutral-500">
-          <div class="text-sm">Copyright © Nexwork ERP</div>
+        <div class="copyright">
+          <div class="copyright-text">Copyright © Nexwork ERP</div>
         </div>
       </div>
     </nav>

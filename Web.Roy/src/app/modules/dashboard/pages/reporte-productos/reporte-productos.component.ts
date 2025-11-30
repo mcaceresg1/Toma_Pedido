@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { CurrencyPipe, NgFor, AsyncPipe, DecimalPipe, DatePipe, NgClass, CommonModule } from '@angular/common';
+import { CurrencyPipe, NgFor, DecimalPipe, DatePipe, CommonModule } from '@angular/common';
 import { ReportesService } from '../../services/reportes.service';
 import { ProductoReport } from '../../../../../models/ProductoReport';
 import { NgxPaginationModule } from 'ngx-pagination';
@@ -17,13 +17,11 @@ import { exportToExcel } from '../../../../shared/util/exportarExcel';
   styleUrls: ['./reporte-productos.component.scss'],
   imports: [    
     NgFor,
-    AsyncPipe,
     CurrencyPipe,
     DecimalPipe,   
     DatePipe,
     NgxPaginationModule,
     FormsModule,  
-    NgClass,
     CommonModule,
     MatToolbarModule,
     MatMenuModule   
