@@ -49,33 +49,73 @@
                   <span class="menu-text">Registro Pedido</span>
                 </a>
               </li>
+            </ul>
+          </li>
+
+          <!-- REPORTE VENTAS CON SUBMENÚ -->
+          <li class="menu-item has-submenu" [class.expanded]="reporteVentasExpanded" *ngIf="getPermisos('Ventas')">
+            <div class="menu-item-content" (click)="toggleReporteVentas()">
+              <mat-icon class="menu-icon">assessment</mat-icon>
+              <span class="menu-text">Reporte Ventas</span>
+              <mat-icon class="expand-icon">{{ reporteVentasExpanded ? 'expand_less' : 'expand_more' }}</mat-icon>
+            </div>
+            <ul class="submenu-list" *ngIf="reporteVentasExpanded">
               <li class="menu-item">
                 <a class="menu-item-content submenu-item" (click)="navegarA('/dashboard/pages/ordenPedidos')">
-                  <mat-icon class="menu-icon">list_alt</mat-icon>
-                  <span class="menu-text">Reporte Pedidos</span>
+                  <mat-icon class="menu-icon">person</mat-icon>
+                  <span class="menu-text">Pedidos x Vend.</span>
+                </a>
+              </li>
+              <li class="menu-item">
+                <a class="menu-item-content submenu-item" (click)="navegarA('/dashboard/pages/ordenPedidosZona')">
+                  <mat-icon class="menu-icon">location_on</mat-icon>
+                  <span class="menu-text">Pedidos x Zona</span>
                 </a>
               </li>
             </ul>
           </li>
 
-          <!-- COMPRAS -->
-          <li class="menu-item has-submenu" [class.expanded]="comprasExpanded" *ngIf="getPermisos('Resportes')">
-            <div class="menu-item-content" (click)="toggleCompras()">
+          <!-- REPORTE COMPRAS -->
+          <li class="menu-item has-submenu" [class.expanded]="reporteComprasExpanded" *ngIf="getPermisos('Reportes')">
+            <div class="menu-item-content" (click)="toggleReporteCompras()">
               <mat-icon class="menu-icon">bar_chart</mat-icon>
-              <span class="menu-text">Compras</span>
-              <mat-icon class="expand-icon">{{ comprasExpanded ? 'expand_less' : 'expand_more' }}</mat-icon>
+              <span class="menu-text">Reporte Compras</span>
+              <mat-icon class="expand-icon">{{ reporteComprasExpanded ? 'expand_less' : 'expand_more' }}</mat-icon>
             </div>
-            <ul class="submenu-list" *ngIf="comprasExpanded">
+            <ul class="submenu-list" *ngIf="reporteComprasExpanded">
               <li class="menu-item">
                 <a class="menu-item-content submenu-item" [routerLink]="['/dashboard/pages/reporteProductos']" routerLinkActive="active">
                   <mat-icon class="menu-icon">inventory</mat-icon>
-                  <span class="menu-text">Reporte Productos</span>
+                  <span class="menu-text">Productos</span>
                 </a>
               </li>
               <li class="menu-item">
                 <a class="menu-item-content submenu-item" [routerLink]="['/dashboard/pages/reporteProveedor']" routerLinkActive="active">
                   <mat-icon class="menu-icon">local_shipping</mat-icon>
-                  <span class="menu-text">Reporte Proveedor</span>
+                  <span class="menu-text">Proveedores</span>
+                </a>
+              </li>
+            </ul>
+          </li>
+
+          <!-- MANTENIMIENTO CON SUBMENÚ -->
+          <li class="menu-item has-submenu" [class.expanded]="mantenimientoExpanded" *ngIf="getPermisos('Mantenimiento')">
+            <div class="menu-item-content" (click)="toggleMantenimiento()">
+              <mat-icon class="menu-icon">settings</mat-icon>
+              <span class="menu-text">Mantenimiento</span>
+              <mat-icon class="expand-icon">{{ mantenimientoExpanded ? 'expand_less' : 'expand_more' }}</mat-icon>
+            </div>
+            <ul class="submenu-list" *ngIf="mantenimientoExpanded">
+              <li class="menu-item">
+                <a class="menu-item-content submenu-item" (click)="navegarA('/dashboard/pages/gestion-zonas')">
+                  <mat-icon class="menu-icon">map</mat-icon>
+                  <span class="menu-text">Zonas</span>
+                </a>
+              </li>
+              <li class="menu-item">
+                <a class="menu-item-content submenu-item" (click)="navegarA('/dashboard/pages/ubigeos-por-zona')">
+                  <mat-icon class="menu-icon">place</mat-icon>
+                  <span class="menu-text">Ubigeos por Zona</span>
                 </a>
               </li>
             </ul>
@@ -192,7 +232,7 @@
   size="medium"
   color="#fff"
   type="ball-scale-multiple"
-  name="empresa"
+  name="empresas"
 >
   <p style="font-size: 20px; color: white">Cargando lista de empresas...</p>
 </ngx-spinner>

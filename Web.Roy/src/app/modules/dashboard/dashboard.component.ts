@@ -57,7 +57,9 @@ export class DashboardComponent implements OnInit {
   
   // Estados de expansión de menús
   ventasExpanded: boolean = false;
-  comprasExpanded: boolean = false;
+  reporteVentasExpanded: boolean = false;
+  reporteComprasExpanded: boolean = false;
+  mantenimientoExpanded: boolean = false;
 
   roles: Rol[] = [
     {
@@ -208,8 +210,16 @@ export class DashboardComponent implements OnInit {
     this.ventasExpanded = !this.ventasExpanded;
   }
 
-  toggleCompras(): void {
-    this.comprasExpanded = !this.comprasExpanded;
+  toggleReporteVentas(): void {
+    this.reporteVentasExpanded = !this.reporteVentasExpanded;
+  }
+
+  toggleReporteCompras(): void {
+    this.reporteComprasExpanded = !this.reporteComprasExpanded;
+  }
+
+  toggleMantenimiento(): void {
+    this.mantenimientoExpanded = !this.mantenimientoExpanded;
   }
 
   // getPermisos(menu: string) {

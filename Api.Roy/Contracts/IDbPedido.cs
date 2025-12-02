@@ -17,6 +17,7 @@ namespace ApiRoy.Contracts
         Task<bool> SavePedido(string usuario, string maquina, EcNuevoPedido pedido);
         Task<bool> UpdatePedido(string usuario, string operacion, EcActualizarPedido pedido);
         Task<List<EcHistoricoPedidoCabecera>> GetHistoricoPedidosCabecera(DateTime? fechaInicio = null,DateTime? fechaFin = null,int? vendedorId = null);
+        Task<List<EcHistoricoPedidoCabecera>> GetHistoricoPedidosPorZona(DateTime? fechaInicio = null, DateTime? fechaFin = null, int? vendedorId = null, bool? conDespacho = null);
         Task<List<EcHistoricoPedidoDetalle>> GetHistoricoPedidosDetalle(int nroOperacion);
         Task<List<EcFiltroVendedor>> GetVendedores();
     }

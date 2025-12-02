@@ -308,6 +308,24 @@
             }
         }
 
+        public async Task<List<EcHistoricoPedidoCabecera>> GetHistoricoPedidosPorZona(
+            DateTime? fechaInicio = null,
+            DateTime? fechaFin = null,
+            int? vendedorId = null,
+            bool? conDespacho = null)
+        {
+            try
+            {
+                // Para pedidos por zona, NO cargamos los detalles
+                var cabeceras = await _dbPedido.GetHistoricoPedidosPorZona(fechaInicio, fechaFin, vendedorId, conDespacho);
+                return cabeceras;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error al obtener pedidos por zona", ex);
+            }
+        }
+
         public async Task<List<EcFiltroVendedor>> GetVendedores()
         {
             try

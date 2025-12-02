@@ -1,0 +1,85 @@
+<div class="ubigeos-por-zona-container">
+  <!-- Header -->
+  <div class="header">
+    <h2>Ubigeos por Zona</h2>
+  </div>
+
+  <!-- Mensajes -->
+  <div class="messages">
+    <div class="alert alert-error" *ngIf="error">
+      <strong>Error:</strong> {{ error }}
+      <button class="close" (click)="clearMessages()">&times;</button>
+    </div>
+    <div class="alert alert-success" *ngIf="success">
+      <strong>Éxito:</strong> {{ success }}
+      <button class="close" (click)="clearMessages()">&times;</button>
+    </div>
+  </div>
+
+  <!-- Contenido -->
+  <div class="tab-content">
+    <div class="ubigeos-section">
+      <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
+        <label style="margin: 0; white-space: nowrap;">Seleccionar Zona:</label>
+        <select 
+          [(ngModel)]="zonaSeleccionada" 
+          (ngModelChange)="onZonaChange()"
+          class="form-select"
+          [disabled]="loading || zonas.length === 0"
+          style="flex: 1;">
+          <option [ngValue]="null">Seleccione una zona...</option>
+          <option *ngFor="let zona of zonas" [ngValue]="zona.zonaCodigo">
+            {{ zona.zonaCodigo }} - {{ zona.descripcion }}
+          </option>
+        </select>
+      </div>
+
+      <div *ngIf="zonaSeleccionada" class="ubigeos-container">
+        <div class="filter-section" style="display: flex; align-items: center; gap: 8px;">
+          <label style="margin: 0; white-space: nowrap;">Filtrar Ubigeos:</label>
+          <input 
+            type="text" 
+            [(ngModel)]="filtroUbigeo" 
+            (ngModelChange)="filtrarUbigeos()"
+            placeholder="Buscar por código o formato completo (ej: lima, lima, lima)..."
+            class="filter-input"
+            style="flex: 1;">
+        </div>
+
+        <div class="ubigeos-list-container">
+          <div class="list-header">
+            <span>Total: {{ ubigeosFiltrados.length }} ubigeos</span>
+            <span *ngIf="zonaSeleccionada">Seleccionados: {{ ubigeosSeleccionados.size }}</span>
+          </div>
+          <div class="ubigeos-list">
+            <div *ngFor="let ubigeo of ubigeosFiltrados" class="ubigeo-item">
+              <label>
+                <input 
+                  type="checkbox" 
+                  [checked]="isUbigeoSeleccionado(ubigeo.ubigeo)"
+                  (change)="toggleUbigeo(ubigeo.ubigeo)">
+                <span class="ubigeo-codigo">{{ ubigeo.ubigeo }}</span>
+                <span class="ubigeo-descripcion">{{ ubigeo.distrito }}, {{ ubigeo.provincia }}, {{ ubigeo.departamento }}</span>
+              </label>
+            </div>
+            <div *ngIf="ubigeosFiltrados.length === 0" class="no-data">
+              No hay ubigeos que coincidan con el filtro
+            </div>
+          </div>
+        </div>
+
+        <div class="actions-section">
+          <button 
+            type="button" 
+            class="btn btn-primary" 
+            (click)="guardarUbigeosZona()"
+            [disabled]="loading || !zonaSeleccionada">
+            <span *ngIf="loading">Guardando...</span>
+            <span *ngIf="!loading">Guardar Ubigeos</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

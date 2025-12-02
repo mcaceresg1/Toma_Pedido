@@ -13,6 +13,8 @@ import { UpdatePedidoComponent } from './pages/update-pedido/update-pedido.compo
 import { ReporteProveedorComponent } from './pages/reporte-proveedor/reporte-proveedor.component';
 import { ReporteProductosComponent } from './pages/reporte-productos/reporte-productos.component';
 import { OrdenPedidoComponent } from './pages/orden-pedido/orden-pedido.component';
+import { GestionZonasComponent } from './pages/gestion-zonas/gestion-zonas.component';
+import { UbigeosPorZonaComponent } from './pages/ubigeos-por-zona/ubigeos-por-zona.component';
 
 const routes: Routes = [
   {
@@ -27,6 +29,9 @@ const routes: Routes = [
       { path: 'pages/reporteProductos', component: ReporteProductosComponent },
       { path: 'pages/reporteProveedor', component: ReporteProveedorComponent },
       { path: 'pages/ordenPedidos', component: OrdenPedidoComponent },
+      { path: 'pages/ordenPedidosZona', component: OrdenPedidoComponent, data: { modo: 'zona' } },
+      { path: 'pages/gestion-zonas', component: GestionZonasComponent },
+      { path: 'pages/ubigeos-por-zona', component: UbigeosPorZonaComponent },
       {
         path: 'pages/ventas/:numPedido',
         component: DetallePedidoComponent,

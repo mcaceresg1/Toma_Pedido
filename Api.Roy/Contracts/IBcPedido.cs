@@ -18,6 +18,7 @@
         Task<bool> SavePedido(string usuario, string maquina, EcNuevoPedido pedido);
         Task<bool> UpdatePedido(string usuario, string operacion, EcActualizarPedido pedido);
         Task<List<EcHistoricoPedidoCabecera>> GetHistoricoPedidos(DateTime? fechaInicio = null,DateTime? fechaFin = null,int? idVendedor = null);
+        Task<List<EcHistoricoPedidoCabecera>> GetHistoricoPedidosPorZona(DateTime? fechaInicio = null, DateTime? fechaFin = null, int? vendedorId = null, bool? conDespacho = null);
         Task<List<EcFiltroVendedor>> GetVendedores();
 
 

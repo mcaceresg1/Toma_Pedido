@@ -1,0 +1,124 @@
+<div class="gestion-zonas-container">
+  <!-- Header -->
+  <div class="header">
+    <h2>Gestión de Zonas</h2>
+  </div>
+
+  <!-- Mensajes -->
+  <div class="messages">
+    <div class="alert alert-error" *ngIf="error">
+      <strong>Error:</strong> {{ error }}
+      <button class="close" (click)="clearMessages()">&times;</button>
+    </div>
+    <div class="alert alert-success" *ngIf="success">
+      <strong>Éxito:</strong> {{ success }}
+      <button class="close" (click)="clearMessages()">&times;</button>
+    </div>
+  </div>
+
+  <!-- Contenido -->
+  <div class="tab-content">
+    <div class="zonas-table-container">
+      <div class="table-actions">
+        <button type="button" class="btn btn-sm btn-primary" (click)="openModalNuevaZona()" [disabled]="loading">
+          <mat-icon>add</mat-icon> Nueva Zona
+        </button>
+      </div>
+      <table class="zonas-table">
+        <thead>
+          <tr>
+            <th>CÓDIGO</th>
+            <th>DESCRIPCIÓN</th>
+            <th>CORTO</th>
+            <th>ACCIONES</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let zona of zonas">
+            <td>{{ zona.zonaCodigo }}</td>
+            <td>{{ zona.descripcion }}</td>
+            <td>{{ zona.corto || '-' }}</td>
+            <td>
+              <button type="button" class="btn btn-sm btn-secondary" (click)="openModalEditarZona(zona)" [disabled]="loading">
+                Editar
+              </button>
+              <button type="button" class="btn btn-sm btn-danger" (click)="deleteZona(zona)" [disabled]="loading">
+                Eliminar
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="zonas.length === 0 && !loading">
+            <td colspan="4" class="no-data">No hay zonas registradas</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal para crear/editar zona -->
+<div class="modal-overlay" *ngIf="mostrarModalZona" (click)="closeModalZona()">
+  <div class="modal-content modal-medium" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ isCreatingZona ? 'Nueva Zona' : 'Editar Zona' }}</h3>
+      <button class="modal-close" (click)="closeModalZona()">&times;</button>
+    </div>
+    
+    <form [formGroup]="formZona" (ngSubmit)="saveZona()">
+      <div class="modal-body">
+        <div class="form-row">
+          <label>Código: <span class="required">*</span></label>
+          <input 
+            type="text" 
+            formControlName="zonaCodigo" 
+            [readonly]="!isCreatingZona"
+            maxlength="3"
+            placeholder="Código de zona (3 caracteres)"
+            style="text-transform: uppercase;">
+          <small *ngIf="formZona.get('zonaCodigo')?.hasError('required') && formZona.get('zonaCodigo')?.touched">
+            Código es requerido
+          </small>
+        </div>
+
+        <div class="form-row">
+          <label>Descripción: <span class="required">*</span></label>
+          <input 
+            type="text" 
+            formControlName="descripcion" 
+            maxlength="100"
+            placeholder="Descripción de la zona">
+          <small *ngIf="formZona.get('descripcion')?.hasError('required') && formZona.get('descripcion')?.touched">
+            Descripción es requerida
+          </small>
+        </div>
+
+        <div class="form-row">
+          <label>Corto:</label>
+          <input 
+            type="text" 
+            formControlName="corto" 
+            maxlength="20"
+            placeholder="Descripción corta (opcional)">
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button 
+          type="submit" 
+          class="btn btn-primary" 
+          [disabled]="formZona.invalid || loading">
+          <span *ngIf="loading">Guardando...</span>
+          <span *ngIf="!loading">{{ isCreatingZona ? 'Crear' : 'Guardar' }}</span>
+        </button>
+        <button 
+          type="button" 
+          class="btn btn-secondary" 
+          (click)="closeModalZona()"
+          [disabled]="loading">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+

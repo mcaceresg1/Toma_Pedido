@@ -100,5 +100,7 @@ export interface HistoricoPedidoCabecera {
   orginal: number;
   despachada: number;
   detalles: HistoricoPedidoDetalle[];
+  ubigeo?: string;
+  zona?: string;
 }
 

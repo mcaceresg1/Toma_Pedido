@@ -16,6 +16,8 @@
         public bool Anu { get; set; }
         public decimal Orginal { get; set; }
         public decimal Despachada { get; set; }
+        public string? Ubigeo { get; set; }
+        public string? Zona { get; set; }
 
         public List<EcHistoricoPedidoDetalle> Detalles { get; set; } = new();
     }

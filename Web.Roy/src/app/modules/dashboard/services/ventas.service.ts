@@ -316,6 +316,34 @@ export class VentasService {
   
   
 
+  getHistoricoPedidosPorZona(
+    fechaInicio: string | null,
+    fechaFin: string | null,
+    vendedorId: number | null,
+    conDespacho: boolean | null = null
+  ): Observable<HistoricoPedidoCabecera[]> {
+    let params = new HttpParams();
+  
+    // Solo agrega el parámetro si tiene valor
+    if (fechaInicio) {
+      params = params.set('fechaInicio', fechaInicio);
+    }
+  
+    if (fechaFin) {
+      params = params.set('fechaFin', fechaFin);
+    }
+  
+    if (vendedorId && vendedorId !== 0) {
+      params = params.set('vendedorId', vendedorId.toString());
+    }
+
+    if (conDespacho !== null) {
+      params = params.set('conDespacho', conDespacho.toString());
+    }
+  
+    return this.http.get<HistoricoPedidoCabecera[]>(`${this.URL}pedidos/GetHistoricoPedidosPorZona`, { params });
+  }
+
   getHistoricoPedidoDetalle(operacion: number): Observable<HistoricoPedidoDetalle[]> {
     const url = `${this.URL}pedidos/GetHistoricoPedidoDetalle?operacion=${operacion}`;
     return this.http.get<HistoricoPedidoDetalle[]>(url);

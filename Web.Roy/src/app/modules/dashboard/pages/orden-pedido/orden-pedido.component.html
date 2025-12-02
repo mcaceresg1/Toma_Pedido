@@ -3,7 +3,7 @@
   <!-- Título -->
   <div class="flex flex-col md:flex-row my-4 bg-white rounded-md shadow overflow-hidden">
     <mat-toolbar class="!w-fit !bg-white">
-      <span>Histórico - ORDEN DE PEDIDO</span>
+      <span><strong>{{ modoZona ? 'Pedidos por Zona' : 'Pedidos por Vendedor' }}</strong></span>
     </mat-toolbar>
   </div>
 
@@ -23,9 +23,18 @@
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1" for="vendedor">Vendedor</label>
         <select id="vendedor" [(ngModel)]="vendedorSeleccionado" class="border rounded px-3 py-2">
-          <option [ngValue]="null">-- Seleccione --</option>
+          <option [ngValue]="0">Todos</option>
           <option *ngFor="let vendedor of vendedores" [value]="vendedor.vendedor">{{ vendedor.nombre }}</option>
 
+        </select>
+      </div>
+      <!-- Filtro Despacho (solo en modo zona) -->
+      <div *ngIf="modoZona">
+        <label class="block text-sm font-medium text-gray-700 mb-1" for="filtroDespacho">Despacho</label>
+        <select id="filtroDespacho" [(ngModel)]="filtroDespacho" class="border rounded px-3 py-2">
+          <option value="todos">Todos</option>
+          <option value="con_despacho">Con Despacho</option>
+          <option value="sin_despacho">Sin Despacho</option>
         </select>
       </div>
 
@@ -43,12 +52,13 @@
     <!-- Spinner visible mientras carga -->
 
     <!-- Tabla cabecera órdenes -->
-    <div class="overflow-x-auto border rounded shadow max-h-[300px] mb-4">
+    <div class="overflow-x-auto border rounded shadow" [style.max-height]="modoZona ? '600px' : '300px'" style="min-height: 400px;" class="mb-4">
       <table class="min-w-full text-sm text-left text-gray-800">
         <thead class="bg-blue-600 text-white text-xs uppercase">
           <tr>
+            <th class="px-3 py-2" *ngIf="modoZona" style="min-width: 150px;">Zona</th>
             <th class="px-3 py-2">Vendedor</th>
-            <th class="px-3 py-2">Transacción</th>
+            <th class="px-3 py-2">Trasanc</th>
             <th class="px-3 py-2">Fecha</th>
             <th class="px-3 py-2">Cliente</th>
             <th class="px-3 py-2">Referencia</th>
@@ -60,11 +70,12 @@
             <th class="px-3 py-2">Referencia Anulada</th>
             <th class="px-3 py-2 text-right">Original</th>
             <th class="px-3 py-2 text-right">Despachada</th>
+            <th class="px-3 py-2" *ngIf="modoZona" style="min-width: 160px;">Ubigeo</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200 cursor-pointer">
-          <tr *ngIf="cargando">
-            <td colspan="13">
+            <tr *ngIf="cargando">
+            <td [attr.colspan]="modoZona ? 15 : 13">
               <div
                 style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100px;">
                 <mat-spinner diameter="40"></mat-spinner>
@@ -72,12 +83,15 @@
               </div>
             </td>
             </tr>
-            <tr *ngFor="let orden of ordenes" (click)="seleccionarOrden(orden)"
-              [class.bg-blue-100]="orden === ordenSeleccionada">
+            <tr *ngFor="let orden of ordenes" 
+              [class.bg-blue-100]="!modoZona && orden === ordenSeleccionada"
+              [class.cursor-pointer]="!modoZona"
+              (click)="!modoZona && seleccionarOrden(orden)">
+              <td class="px-3 py-1" *ngIf="modoZona" style="min-width: 150px;">{{ orden.zona || '-' }}</td>
               <td class="px-3 py-1">{{ orden.vendedor }}</td>
               <td class="px-3 py-1">{{ orden.operacion }}</td>
               <td class="px-3 py-1">{{ orden.fecha | date:'dd/MM/yyyy' }}</td>
-              <td class="px-3 py-1">{{ orden.cliente }}</td>
+              <td class="px-3 py-1" [title]="orden.cliente">{{ truncarTexto(orden.cliente, 30) }}</td>
               <td class="px-3 py-1">{{ orden.referencia }}</td>
               <td class="px-3 py-1">{{ orden.guia }}</td>
               <td class="px-3 py-1">{{ orden.factura }}</td>
@@ -92,10 +106,11 @@
               </td>
               <td class="px-3 py-1 text-right">{{ orden.orginal }}</td>
               <td class="px-3 py-1 text-right">{{ orden.despachada }}</td>
+              <td class="px-3 py-1" *ngIf="modoZona" style="min-width: 160px; white-space: nowrap;">{{ orden.ubigeo || '-' }}</td>
             </tr>
             <!-- Solo mostrar si no hay datos y NO está cargando -->
             <tr *ngIf="!cargando && ordenes.length === 0">
-              <td colspan="13" style="text-align: center; padding: 10px;">
+              <td [attr.colspan]="modoZona ? 15 : 13" style="text-align: center; padding: 10px;">
                 No hay órdenes para las fechas seleccionadas.
               </td>
             </tr>
@@ -104,8 +119,8 @@
 
     </div>
 
-    <!-- Tabla detalle de orden seleccionada -->
-    <div *ngIf="ordenSeleccionada" class="overflow-x-auto border rounded shadow max-h-[300px]">
+    <!-- Tabla detalle de orden seleccionada (solo en modo vendedor, no en modo zona) -->
+    <div *ngIf="!modoZona && ordenSeleccionada" class="overflow-x-auto border rounded shadow max-h-[300px]">
       <h3 class="font-semibold mb-2 px-3">
         Detalle de la Orden: {{ ordenSeleccionada.factura || ordenSeleccionada.guia || ('#' +
         ordenSeleccionada.operacion) }}

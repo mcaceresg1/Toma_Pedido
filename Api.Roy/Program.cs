@@ -134,6 +134,8 @@ namespace ApiRoy
             builder.Services.AddScoped<IBcPedido, BcPedido>();
             builder.Services.AddScoped<IBcUser, BcUser>();
             builder.Services.AddScoped<IBcReporte, BcReporte>();
+            builder.Services.AddScoped<IBcZona, BcZona>();
+            builder.Services.AddScoped<IBcUbigeo, BcUbigeo>();
 
 
             //Mapeo IDb
@@ -141,6 +143,8 @@ namespace ApiRoy
             builder.Services.AddScoped<IDbPedido, DbPedido>();
             builder.Services.AddScoped<IDbUser, DbUser>();
             builder.Services.AddScoped<IDbReporte, DbReporte>();
+            builder.Services.AddScoped<IDbZona, DbZona>();
+            builder.Services.AddScoped<IDbUbigeo, DbUbigeo>();
 
             // No se necesita registrar el middleware tradicional en Services
 

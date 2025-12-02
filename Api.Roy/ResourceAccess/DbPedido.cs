@@ -728,6 +728,9 @@
             {
                 EcHistoricoPedidoCabecera GetItem(DataRow r)
                 {
+                    var ubigeo = r.GetString("UBIGEO");
+                    var zona = r.GetString("ZONA");
+                    
                     return new EcHistoricoPedidoCabecera
                     {
                         Vendedor = r.GetString("VENDEDOR"),
@@ -743,7 +746,9 @@
                         AceptadaPorLaSunat = r.GetString("ACEPTADA_POR_LA_SUNAT"),
                         Anu = r.GetBool("ANU"),
                         Orginal = r.GetDecimal("ORGINAL"),
-                        Despachada = r.GetDecimal("DESPACHADA")
+                        Despachada = r.GetDecimal("DESPACHADA"),
+                        Ubigeo = string.IsNullOrEmpty(ubigeo) ? null : ubigeo,
+                        Zona = string.IsNullOrEmpty(zona) ? null : zona
                     };
                 }
 
@@ -761,6 +766,58 @@
             catch (Exception ex)
             {
                 throw new Exception("Error al obtener cabeceras del histórico de pedidos", ex);
+            }
+        }
+
+        public Task<List<EcHistoricoPedidoCabecera>> GetHistoricoPedidosPorZona(
+            DateTime? fechaInicio = null,
+            DateTime? fechaFin = null,
+            int? vendedorId = null,
+            bool? conDespacho = null)
+        {
+            try
+            {
+                EcHistoricoPedidoCabecera GetItem(DataRow r)
+                {
+                    var ubigeo = r.GetString("UBIGEO");
+                    var zona = r.GetString("ZONA");
+                    
+                    return new EcHistoricoPedidoCabecera
+                    {
+                        Vendedor = r.GetString("VENDEDOR"),
+                        Operacion = r.GetInt("OPERACION"),
+                        Fecha = r.GetDateTime("FECHA"),
+                        Cliente = r.GetString("CLIENTE"),
+                        Referencia = r.GetString("REFERENCIA"),
+                        Total = r.GetDecimal("TOTAL"),
+                        Simbolo = r.GetString("SIMBOLO"),
+                        Guia = r.GetString("GUIA"),
+                        Factura = r.GetString("FACTURA"),
+                        Estado = r.GetString("ESTADO"),
+                        AceptadaPorLaSunat = r.GetString("ACEPTADA_POR_LA_SUNAT"),
+                        Anu = r.GetBool("ANU"),
+                        Orginal = r.GetDecimal("ORGINAL"),
+                        Despachada = r.GetDecimal("DESPACHADA"),
+                        Ubigeo = string.IsNullOrEmpty(ubigeo) ? null : ubigeo,
+                        Zona = string.IsNullOrEmpty(zona) ? null : zona
+                    };
+                }
+
+                var parametros = new List<DbParametro>
+        {
+            new DbParametro("@FECHAINICIO", SqlDbType.DateTime, ParameterDirection.Input, (object?)fechaInicio ?? DBNull.Value),
+            new DbParametro("@FECHAFIN", SqlDbType.DateTime, ParameterDirection.Input, (object?)fechaFin ?? DBNull.Value),
+            new DbParametro("@IDVENDEDOR", SqlDbType.Int, ParameterDirection.Input, (object?)vendedorId ?? DBNull.Value),
+            new DbParametro("@CONDESPACHO", SqlDbType.Bit, ParameterDirection.Input, (object?)conDespacho ?? DBNull.Value)
+        };
+
+                var result = dbData.ObtieneLista("SP_HISTORICO_ORDEN_PEDIDO_POR_ZONA", GetItem, parametros);
+
+                return Task.FromResult(result);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error al obtener pedidos por zona", ex);
             }
         }
 

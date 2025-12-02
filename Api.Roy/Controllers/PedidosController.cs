@@ -294,6 +294,22 @@
             }
         }
 
+        [Authorize]
+        [HttpGet]
+        [Route("GetHistoricoPedidosPorZona")]
+        public async Task<IActionResult> GetHistoricoPedidosPorZona([FromQuery] DateTime? fechaInicio = null, [FromQuery] DateTime? fechaFin = null, [FromQuery] int? vendedorId = null, [FromQuery] bool? conDespacho = null)
+        {
+            try
+            {
+                var result = await _bcPedido.GetHistoricoPedidosPorZona(fechaInicio, fechaFin, vendedorId, conDespacho);
+                return StatusCode(StatusCodes.Status200OK, result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            }
+        }
+
         [HttpGet("GetVendedores")]
         public async Task<IActionResult> GetVendedores()
         {
