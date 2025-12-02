@@ -6,6 +6,36 @@ Este documento establece las **normas principales y obligatorias** que deben seg
 
 ---
 
+## 0. 📋 PLAN DE TRABAJO Y CONFIRMACIÓN
+
+### ✅ OBLIGATORIO
+**Antes de ejecutar cualquier acción significativa, se DEBE presentar un plan de trabajo y esperar la confirmación del usuario.**
+
+### Reglas específicas:
+
+#### 0.1. Cuándo Mostrar el Plan
+- Antes de ejecutar comandos que modifiquen el sistema (deploy, build, install)
+- Antes de modificar múltiples archivos
+- Antes de ejecutar scripts de base de datos
+- Antes de cualquier operación que no sea trivial
+
+#### 0.2. Formato del Plan
+```
+📋 PLAN DE TRABAJO:
+1. [Paso 1] - Descripción breve
+2. [Paso 2] - Descripción breve
+3. [Paso 3] - Descripción breve
+
+¿Confirmas para proceder?
+```
+
+#### 0.3. Excepciones
+- Operaciones de solo lectura (revisar archivos, buscar código)
+- Consultas de información
+- Respuestas a preguntas directas
+
+---
+
 ## 1. 🗄️ SIEMPRE USAR STORED PROCEDURES
 
 ### ✅ OBLIGATORIO
@@ -767,6 +797,77 @@ git push origin [rama]
 - [ ] Cambios commiteados y pusheados
 - [ ] Pull request aprobado (si aplica)
 - [ ] Plan de rollback preparado (por si algo falla)
+- [ ] **Verificación de compatibilidad código-configuración** (ver sección 15)
+
+---
+
+## 15. 🔐 VERIFICACIÓN PRE-DESPLIEGUE: CÓDIGO VS CONFIGURACIÓN
+
+### ✅ OBLIGATORIO
+**Antes de desplegar a producción, SIEMPRE verificar que la configuración de producción sea compatible con el código actual.**
+
+### 15.1. ¿Por qué es importante?
+
+**Caso real (2 Diciembre 2025):**
+- El código en Git usaba `HmacSha512` para JWT (requiere clave de 64+ caracteres)
+- La configuración de producción tenía una clave de 22 caracteres (de una versión anterior con `HmacSha256`)
+- Resultado: Error 500 en login después del despliegue
+
+### 15.2. Checklist de Verificación
+
+#### JWT / Autenticación
+```csharp
+// Verificar en LoginController.cs o donde se genere el token:
+var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
+//                                                         ↑ VERIFICAR ALGORITMO
+```
+
+| Algoritmo | Clave mínima |
+|-----------|--------------|
+| `HmacSha256` | 32 caracteres (256 bits) |
+| `HmacSha512` | 64 caracteres (512 bits) |
+
+**Acción:** Verificar que `appsettings.json` de producción tenga `JWT:SECRET_KEY` con longitud adecuada.
+
+#### Connection Strings
+- Verificar que las cadenas de conexión en producción sean válidas
+- Verificar que `TrustServerCertificate=True` esté presente si es necesario
+
+#### Variables de Entorno
+- Si el código espera variables de entorno, verificar que estén configuradas en IIS/servidor
+
+### 15.3. Proceso de Verificación
+
+```bash
+# PASO 1: Revisar código que usa configuración
+grep -r "GetSection\|GetValue\|GetConnectionString" Api.Roy/
+
+# PASO 2: Comparar con appsettings.json de producción
+# - Verificar que todas las claves existan
+# - Verificar que los valores sean compatibles
+
+# PASO 3: Si hay incompatibilidad
+# - Actualizar configuración de producción ANTES de desplegar
+# - O ajustar el código si es necesario
+```
+
+### 15.4. Configuración Actual de Producción
+
+**JWT:**
+- Algoritmo: `HmacSha512Signature`
+- Clave mínima: 64 caracteres
+- Issuer: `https://apitp.nexwork-peru.com`
+- Audience: `https://tp.nexwork-peru.com`
+
+**URLs:**
+- Backend: `https://apitp.nexwork-peru.com`
+- Frontend: `https://tp.nexwork-peru.com`
+
+**Directorios IIS:**
+- Backend: `C:\inetpub\wwwroot\api.roy`
+- Frontend: `C:\inetpub\wwwroot\web.roy`
+
+**App Pool:** `ApiRoyPool`
 
 ---
 
