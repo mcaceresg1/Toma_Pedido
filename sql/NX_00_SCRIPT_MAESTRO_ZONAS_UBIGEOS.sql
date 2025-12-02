@@ -59,22 +59,6 @@ BEGIN
 END
 GO
 
--- Tabla CUE005_ZONA_UBIGEO: Relación Zona-Ubigeo
-IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CUE005_ZONA_UBIGEO]') AND type in (N'U'))
-BEGIN
-    CREATE TABLE [dbo].[CUE005_ZONA_UBIGEO] (
-        [ZONA] VARCHAR(3) NOT NULL,
-        [UBIGEO] VARCHAR(10) NOT NULL,
-        CONSTRAINT [PK_CUE005_ZONA_UBIGEO] PRIMARY KEY CLUSTERED ([ZONA], [UBIGEO])
-    );
-    PRINT '✓ Tabla CUE005_ZONA_UBIGEO creada exitosamente';
-END
-ELSE
-BEGIN
-    PRINT '  Tabla CUE005_ZONA_UBIGEO ya existe';
-END
-GO
-
 PRINT '';
 PRINT '=============================================';
 PRINT 'PASO 2: CREANDO STORED PROCEDURES - ZONAS';
@@ -259,7 +243,7 @@ BEGIN
         END
         
         -- Verificar que no tenga ubigeos asignados
-        IF EXISTS (SELECT 1 FROM CUE005_ZONA_UBIGEO WHERE ZONA = @ZonaCodigo)
+        IF EXISTS (SELECT 1 FROM CUE005 WHERE ZONA = @ZonaCodigo)
         BEGIN
             SET @Mensaje = 'error|No se puede eliminar la zona porque tiene ubigeos asignados';
             ROLLBACK TRANSACTION;
@@ -305,7 +289,8 @@ BEGIN
         UBIGEO AS Ubigeo,
         DISTRITO AS Distrito,
         PROVINCIA AS Provincia,
-        DEPARTAMENTO AS Departamento
+        DEPARTAMENTO AS Departamento,
+        ZONA AS Zona
     FROM CUE005
     ORDER BY DEPARTAMENTO, PROVINCIA, DISTRITO;
 END;
@@ -327,27 +312,11 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Verificar si la tabla CUE005_ZONA_UBIGEO existe
-    IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[CUE005_ZONA_UBIGEO]') AND type in (N'U'))
-    BEGIN
-        SELECT UBIGEO
-        FROM CUE005_ZONA_UBIGEO
-        WHERE ZONA = @ZonaCodigo
-        ORDER BY UBIGEO;
-    END
-    -- Si no existe, usar el campo ZONA de CUE005 (si existe la columna)
-    ELSE IF EXISTS (SELECT * FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[CUE005]') AND name = 'ZONA')
-    BEGIN
-        SELECT UBIGEO
-        FROM CUE005
-        WHERE ZONA = @ZonaCodigo
-        ORDER BY UBIGEO;
-    END
-    ELSE
-    BEGIN
-        -- Retornar conjunto vacío si no existe ninguna tabla/columna
-        SELECT CAST(NULL AS VARCHAR(10)) AS UBIGEO WHERE 1 = 0;
-    END
+    -- Obtener ubigeos usando la columna ZONA de CUE005
+    SELECT UBIGEO
+    FROM CUE005
+    WHERE ZONA = @ZonaCodigo
+    ORDER BY UBIGEO;
 END;
 GO
 
@@ -377,43 +346,11 @@ BEGIN
         SET ZONA = NULL
         WHERE ZONA = @ZonaCodigo;
         
-        -- Eliminar todas las relaciones existentes para esta zona
-        DELETE FROM CUE005_ZONA_UBIGEO
-        WHERE ZONA = @ZonaCodigo;
-        
         -- Insertar nuevas relaciones si hay ubigeos
         IF @Ubigeos IS NOT NULL AND LEN(LTRIM(RTRIM(@Ubigeos))) > 0 AND ISJSON(@Ubigeos) = 1
         BEGIN
-            -- Validar que los ubigeos no estén asignados a otra zona
-            DECLARE @UbigeosDuplicados NVARCHAR(MAX) = '';
-            
-            SELECT @UbigeosDuplicados = @UbigeosDuplicados + value + ', '
-            FROM OPENJSON(@Ubigeos)
-            WHERE value IS NOT NULL 
-              AND LEN(LTRIM(RTRIM(value))) > 0
-              AND EXISTS (
-                  SELECT 1 
-                  FROM CUE005_ZONA_UBIGEO 
-                  WHERE UBIGEO = value 
-                    AND ZONA <> @ZonaCodigo
-              );
-            
-            -- Si hay ubigeos duplicados, retornar error
-            IF LEN(@UbigeosDuplicados) > 0
-            BEGIN
-                SET @UbigeosDuplicados = LEFT(@UbigeosDuplicados, LEN(@UbigeosDuplicados) - 1);
-                SET @Mensaje = 'error|Los siguientes ubigeos ya están asignados a otra zona: ' + @UbigeosDuplicados;
-                ROLLBACK TRANSACTION;
-                RETURN;
-            END
-            
-            -- Insertar las relaciones en CUE005_ZONA_UBIGEO
-            INSERT INTO CUE005_ZONA_UBIGEO (ZONA, UBIGEO)
-            SELECT @ZonaCodigo, value
-            FROM OPENJSON(@Ubigeos)
-            WHERE value IS NOT NULL AND LEN(LTRIM(RTRIM(value))) > 0;
-            
             -- Actualizar el campo ZONA en CUE005 para cada ubigeo
+            -- Esto permite reasignar ubigeos de una zona a otra
             UPDATE CUE005
             SET ZONA = @ZonaCodigo
             WHERE UBIGEO IN (
@@ -443,10 +380,9 @@ PRINT 'INSTALACIÓN COMPLETADA EXITOSAMENTE';
 PRINT '=============================================';
 PRINT '';
 PRINT 'Resumen:';
-PRINT '- Tablas creadas/verificadas: 3';
+PRINT '- Tablas creadas/verificadas: 2';
 PRINT '  * CUE010 (Zonas)';
 PRINT '  * CUE005 (Ubigeos) - columna ZONA agregada';
-PRINT '  * CUE005_ZONA_UBIGEO (Relación Zona-Ubigeo)';
 PRINT '';
 PRINT '- Stored Procedures creados: 7';
 PRINT '  * NX_Zona_GetAll';
@@ -459,6 +395,9 @@ PRINT '  * NX_Ubigeo_SetByZona';
 PRINT '';
 PRINT 'El módulo de Zonas y Ubigeos está listo para usar.';
 PRINT 'Accede desde el menú: Dashboard > Mantenimiento > Zonas / Ubigeos por Zona';
+PRINT '';
+PRINT 'NOTA: La relación entre zonas y ubigeos se maneja mediante';
+PRINT '      la columna ZONA en la tabla CUE005 (sin tabla intermedia).';
 PRINT '=============================================';
 GO
 

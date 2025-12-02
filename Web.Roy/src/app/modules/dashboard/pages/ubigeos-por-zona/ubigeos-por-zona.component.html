@@ -44,31 +44,6 @@
             placeholder="Buscar por código o formato completo (ej: lima, lima, lima)..."
             class="filter-input"
             style="flex: 1;">
-        </div>
-
-        <div class="ubigeos-list-container">
-          <div class="list-header">
-            <span>Total: {{ ubigeosFiltrados.length }} ubigeos</span>
-            <span *ngIf="zonaSeleccionada">Seleccionados: {{ ubigeosSeleccionados.size }}</span>
-          </div>
-          <div class="ubigeos-list">
-            <div *ngFor="let ubigeo of ubigeosFiltrados" class="ubigeo-item">
-              <label>
-                <input 
-                  type="checkbox" 
-                  [checked]="isUbigeoSeleccionado(ubigeo.ubigeo)"
-                  (change)="toggleUbigeo(ubigeo.ubigeo)">
-                <span class="ubigeo-codigo">{{ ubigeo.ubigeo }}</span>
-                <span class="ubigeo-descripcion">{{ ubigeo.distrito }}, {{ ubigeo.provincia }}, {{ ubigeo.departamento }}</span>
-              </label>
-            </div>
-            <div *ngIf="ubigeosFiltrados.length === 0" class="no-data">
-              No hay ubigeos que coincidan con el filtro
-            </div>
-          </div>
-        </div>
-
-        <div class="actions-section">
           <button 
             type="button" 
             class="btn btn-primary" 
@@ -77,6 +52,33 @@
             <span *ngIf="loading">Guardando...</span>
             <span *ngIf="!loading">Guardar Ubigeos</span>
           </button>
+        </div>
+
+        <div class="ubigeos-list-container">
+          <div class="list-header">
+            <span>Total: {{ ubigeosFiltrados.length }} ubigeos</span>
+            <span *ngIf="zonaSeleccionada">Seleccionados: {{ ubigeosSeleccionados.size }}</span>
+          </div>
+          <div class="ubigeos-list">
+            <div *ngFor="let ubigeo of ubigeosFiltrados" 
+                 class="ubigeo-item"
+                 [class.tiene-zona-diferente]="ubigeo.zona && ubigeo.zona !== zonaSeleccionada">
+              <label>
+                <input 
+                  type="checkbox" 
+                  [checked]="isUbigeoSeleccionado(ubigeo.ubigeo)"
+                  (change)="toggleUbigeo(ubigeo.ubigeo)">
+                <span class="ubigeo-codigo">{{ ubigeo.ubigeo }}</span>
+                <span class="ubigeo-descripcion">{{ ubigeo.distrito }}, {{ ubigeo.provincia }}, {{ ubigeo.departamento }}</span>
+                <span class="ubigeo-zona" [class.sin-zona]="!ubigeo.zona">
+                  {{ getZonaDescripcion(ubigeo.zona) }}
+                </span>
+              </label>
+            </div>
+            <div *ngIf="ubigeosFiltrados.length === 0" class="no-data">
+              No hay ubigeos que coincidan con el filtro
+            </div>
+          </div>
         </div>
       </div>
     </div>

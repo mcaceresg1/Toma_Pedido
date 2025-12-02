@@ -38,7 +38,8 @@ namespace ApiRoy.ResourceAccess
                         Ubigeo = r["Ubigeo"]?.ToString() ?? string.Empty,
                         Distrito = r["Distrito"]?.ToString() ?? string.Empty,
                         Provincia = r["Provincia"]?.ToString() ?? string.Empty,
-                        Departamento = r["Departamento"]?.ToString() ?? string.Empty
+                        Departamento = r["Departamento"]?.ToString() ?? string.Empty,
+                        Zona = r["Zona"]?.ToString()
                     };
                 }
 

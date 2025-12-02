@@ -788,6 +788,7 @@
                         Operacion = r.GetInt("OPERACION"),
                         Fecha = r.GetDateTime("FECHA"),
                         Cliente = r.GetString("CLIENTE"),
+                        Ruc = r.GetString("RUC"),
                         Referencia = r.GetString("REFERENCIA"),
                         Total = r.GetDecimal("TOTAL"),
                         Simbolo = r.GetString("SIMBOLO"),

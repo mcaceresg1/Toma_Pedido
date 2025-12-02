@@ -6,6 +6,7 @@
         public int Operacion { get; set; }
         public DateTime Fecha { get; set; }
         public string Cliente { get; set; } = string.Empty;
+        public string? Ruc { get; set; }
         public string Referencia { get; set; } = string.Empty;
         public decimal Total { get; set; }
         public string Simbolo { get; set; } = string.Empty;

@@ -3,6 +3,7 @@ export interface Ubigeo {
   distrito: string;
   departamento: string;
   provincia: string;
+  zona?: string;
 }
 
 export interface ModalUbigeoData {

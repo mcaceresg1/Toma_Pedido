@@ -13,16 +13,16 @@
     <div class="flex flex-wrap gap-4 items-center border-b border-gray-200 pb-4">
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1" for="fechaDesde">Desde</label>
-        <input type="date" id="fechaDesde" [(ngModel)]="fechaDesde" class="border rounded px-3 py-2" />
+        <input type="date" id="fechaDesde" [(ngModel)]="fechaDesde" (change)="buscar()" class="border rounded px-3 py-2" />
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1" for="fechaHasta">Hasta</label>
-        <input type="date" id="fechaHasta" [(ngModel)]="fechaHasta" class="border rounded px-3 py-2" />
+        <input type="date" id="fechaHasta" [(ngModel)]="fechaHasta" (change)="buscar()" class="border rounded px-3 py-2" />
       </div>
       <!-- Vendedor -->
       <div>
         <label class="block text-sm font-medium text-gray-700 mb-1" for="vendedor">Vendedor</label>
-        <select id="vendedor" [(ngModel)]="vendedorSeleccionado" class="border rounded px-3 py-2">
+        <select id="vendedor" [(ngModel)]="vendedorSeleccionado" (ngModelChange)="buscar()" class="border rounded px-3 py-2">
           <option [ngValue]="0">Todos</option>
           <option *ngFor="let vendedor of vendedores" [value]="vendedor.vendedor">{{ vendedor.nombre }}</option>
 
@@ -31,20 +31,39 @@
       <!-- Filtro Despacho (solo en modo zona) -->
       <div *ngIf="modoZona">
         <label class="block text-sm font-medium text-gray-700 mb-1" for="filtroDespacho">Despacho</label>
-        <select id="filtroDespacho" [(ngModel)]="filtroDespacho" class="border rounded px-3 py-2">
+        <select id="filtroDespacho" [(ngModel)]="filtroDespacho" (ngModelChange)="buscar()" class="border rounded px-3 py-2">
           <option value="todos">Todos</option>
           <option value="con_despacho">Con Despacho</option>
           <option value="sin_despacho">Sin Despacho</option>
         </select>
       </div>
 
-      <div class="mt-6">
-        <button (click)="buscar()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
-          Buscar
-        </button>
+      <div class="mt-6 flex gap-2">
         <button (click)="limpiarFiltros()"
           class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400 transition">
           Limpiar filtros
+        </button>
+        <button (click)="exportarExcel()" 
+          [disabled]="ordenes.length === 0"
+          class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          hidden>
+          📊 Excel Completo
+        </button>
+        <button (click)="exportarExcelDetallado()" 
+          [disabled]="ordenes.length === 0"
+          class="bg-teal-600 text-white px-4 py-2 rounded hover:bg-teal-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+          📋 Excel Detallado
+        </button>
+        <button (click)="exportarResumen()" 
+          [disabled]="ordenes.length === 0"
+          class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          hidden>
+          📈 Exportar Resumen
+        </button>
+        <button (click)="imprimirResumenPDF()" 
+          [disabled]="ordenes.length === 0"
+          class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed">
+          📄 Imprimir PDF Resumen
         </button>
       </div>
 
@@ -52,25 +71,26 @@
     <!-- Spinner visible mientras carga -->
 
     <!-- Tabla cabecera órdenes -->
-    <div class="overflow-x-auto border rounded shadow" [style.max-height]="modoZona ? '600px' : '300px'" style="min-height: 400px;" class="mb-4">
-      <table class="min-w-full text-sm text-left text-gray-800">
-        <thead class="bg-blue-600 text-white text-xs uppercase">
-          <tr>
+    <div class="border rounded shadow mb-4" style="position: relative;">
+      <div class="overflow-x-auto overflow-y-auto" [style.max-height]="modoZona ? '700px' : '350px'" style="height: 700px;">
+        <table class="min-w-full text-sm text-left text-gray-800">
+          <thead class="bg-blue-600 text-white text-xs uppercase sticky top-0 z-10">
+            <tr>
             <th class="px-3 py-2" *ngIf="modoZona" style="min-width: 150px;">Zona</th>
-            <th class="px-3 py-2">Vendedor</th>
-            <th class="px-3 py-2">Trasanc</th>
-            <th class="px-3 py-2">Fecha</th>
-            <th class="px-3 py-2">Cliente</th>
-            <th class="px-3 py-2">Referencia</th>
-            <th class="px-3 py-2">Guía</th>
-            <th class="px-3 py-2">Factura</th>
-            <th class="px-3 py-2 text-right">Total</th>
-            <th class="px-3 py-2">Estado</th>
-            <th class="px-3 py-2">SUNAT</th>
-            <th class="px-3 py-2">Referencia Anulada</th>
-            <th class="px-3 py-2 text-right">Original</th>
-            <th class="px-3 py-2 text-right">Despachada</th>
-            <th class="px-3 py-2" *ngIf="modoZona" style="min-width: 160px;">Ubigeo</th>
+            <th class="px-3 py-2" style="min-width: 200px;">Vendedor</th>
+            <th class="px-3 py-2" *ngIf="modoZona" style="min-width: 180px;">Ubigeo</th>
+            <th class="px-3 py-2" style="min-width: 80px;">Trasanc</th>
+            <th class="px-3 py-2" style="min-width: 100px;">Fecha</th>
+            <th class="px-3 py-2" style="min-width: 350px;">Cliente</th>
+            <th class="px-3 py-2" style="min-width: 100px;">Referencia</th>
+            <th class="px-3 py-2" style="min-width: 150px;">Guía</th>
+            <th class="px-3 py-2" style="min-width: 150px;">Factura</th>
+            <th class="px-3 py-2 text-right" style="min-width: 100px;">Despachado</th>
+            <th class="px-3 py-2 text-right" style="min-width: 100px;">Pendiente</th>
+            <th class="px-3 py-2 text-right" style="min-width: 120px;">Total</th>
+            <th class="px-3 py-2" style="min-width: 100px;">Estado</th>
+            <th class="px-3 py-2 text-right" style="min-width: 80px;">Original</th>
+            <th class="px-3 py-2 text-right" style="min-width: 100px;">Despachada</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200 cursor-pointer">
@@ -88,25 +108,20 @@
               [class.cursor-pointer]="!modoZona"
               (click)="!modoZona && seleccionarOrden(orden)">
               <td class="px-3 py-1" *ngIf="modoZona" style="min-width: 150px;">{{ orden.zona || '-' }}</td>
-              <td class="px-3 py-1">{{ orden.vendedor }}</td>
-              <td class="px-3 py-1">{{ orden.operacion }}</td>
-              <td class="px-3 py-1">{{ orden.fecha | date:'dd/MM/yyyy' }}</td>
-              <td class="px-3 py-1" [title]="orden.cliente">{{ truncarTexto(orden.cliente, 30) }}</td>
-              <td class="px-3 py-1">{{ orden.referencia }}</td>
-              <td class="px-3 py-1">{{ orden.guia }}</td>
-              <td class="px-3 py-1">{{ orden.factura }}</td>
+              <td class="px-3 py-1" style="min-width: 200px;">{{ orden.vendedor }}</td>
+              <td class="px-3 py-1" *ngIf="modoZona" style="min-width: 180px; white-space: nowrap;">{{ orden.ubigeo || '-' }}</td>
+              <td class="px-3 py-1" style="min-width: 80px;">{{ orden.operacion }}</td>
+              <td class="px-3 py-1" style="min-width: 100px;">{{ orden.fecha | date:'dd/MM/yyyy' }}</td>
+              <td class="px-3 py-1" [title]="orden.cliente" style="min-width: 350px;">{{ orden.cliente }}</td>
+              <td class="px-3 py-1" style="min-width: 100px;">{{ orden.referencia }}</td>
+              <td class="px-3 py-1" style="min-width: 150px;">{{ orden.guia }}</td>
+              <td class="px-3 py-1" style="min-width: 150px;">{{ orden.factura }}</td>
+              <td class="px-3 py-1 text-right">{{ orden.estado === 'DESPACHADO' ? (orden.total | currency:orden.simbolo:'symbol':'1.2-2') : '-' }}</td>
+              <td class="px-3 py-1 text-right">{{ (orden.estado === 'PENDIENTE' || orden.estado === 'PARCIAL') ? (orden.total | currency:orden.simbolo:'symbol':'1.2-2') : '-' }}</td>
               <td class="px-3 py-1 text-right">{{ orden.total | currency:orden.simbolo:'symbol':'1.2-2' }}</td>
               <td class="px-3 py-1">{{ orden.estado }}</td>
-              <td class="px-3 py-1">{{ orden.aceptadaPorLaSunat }}</td>
-              <td class="px-3 py-1">
-                <span class="px-2 py-1 rounded text-xs font-semibold"
-                  [ngClass]="orden.anu ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'">
-                  {{ orden.anu ? 'Anulada' : 'Vigente' }}
-                </span>
-              </td>
               <td class="px-3 py-1 text-right">{{ orden.orginal }}</td>
               <td class="px-3 py-1 text-right">{{ orden.despachada }}</td>
-              <td class="px-3 py-1" *ngIf="modoZona" style="min-width: 160px; white-space: nowrap;">{{ orden.ubigeo || '-' }}</td>
             </tr>
             <!-- Solo mostrar si no hay datos y NO está cargando -->
             <tr *ngIf="!cargando && ordenes.length === 0">
@@ -115,8 +130,8 @@
               </td>
             </tr>
         </tbody>
-      </table>
-
+        </table>
+      </div>
     </div>
 
     <!-- Tabla detalle de orden seleccionada (solo en modo vendedor, no en modo zona) -->

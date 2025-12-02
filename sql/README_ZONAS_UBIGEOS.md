@@ -24,11 +24,8 @@ Este módulo permite la gestión de zonas geográficas y la asignación de ubige
 
 2. **CUE005** - Ubigeos (tabla existente, se agrega columna)
    - `ZONA` (VARCHAR(3)) - Código de zona asignada (nueva columna)
-
-3. **CUE005_ZONA_UBIGEO** - Relación Zona-Ubigeo
-   - `ZONA` (VARCHAR(3)) - Código de zona
-   - `UBIGEO` (VARCHAR(10)) - Código de ubigeo
-   - PK: (ZONA, UBIGEO)
+   
+**NOTA:** La relación entre zonas y ubigeos se maneja mediante la columna `ZONA` en la tabla `CUE005`, sin necesidad de una tabla intermedia.
 
 ### Stored Procedures Creados
 

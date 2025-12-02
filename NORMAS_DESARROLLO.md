@@ -143,10 +143,29 @@ catch (Exception ex)
 
 ### Reglas específicas:
 
-#### 4.1. Nomenclatura de Archivos
+#### 4.1. Ubicación de Archivos SQL
+
+⚠️ **OBLIGATORIO: Todos los archivos .SQL que se creen para ejecutar DEBEN ir en:**
+
+```
+E:\Fuentes Nexwork\Toma_Pedido\sql\
+```
+
+**NO colocar scripts SQL en:**
+- ❌ `Api.Roy\ScriptsDB\` (solo para referencia/backup)
+- ❌ Cualquier otra ubicación
+
+**Razón:** Centralizar todos los scripts ejecutables en un solo directorio facilita:
+- ✅ Encontrarlos rápidamente
+- ✅ Ejecutarlos en orden
+- ✅ Mantener control de versiones
+- ✅ Documentarlos adecuadamente
+
+#### 4.2. Nomenclatura de Archivos
 - **Stored Procedures individuales:** `sql/NX_[Entidad]_[Accion].sql`
 - **Script maestro:** `sql/NX_00_SCRIPT_MAESTRO_COMPLETO.sql`
 - **Script ejecutar todos:** `sql/NX_00_EJECUTAR_TODOS.sql`
+- **Stored Procedures de reportes:** `sql/SP_[Nombre_Descriptivo].sql`
 
 #### 4.2. Formato de Stored Procedures
 ```sql

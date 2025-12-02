@@ -89,6 +89,7 @@ export interface HistoricoPedidoCabecera {
   operacion: number;
   fecha: string; // DateTime viene como string ISO, luego puedes convertir si quieres
   cliente: string;
+  ruc?: string;
   referencia: string;
   total: number;
   simbolo: string;

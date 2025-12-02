@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 import FileSaver from 'file-saver';
 
 export interface HeaderConfig {
@@ -35,6 +35,22 @@ export function exportToExcel<T extends Record<string, any>>(
   worksheet['!cols'] = headers.map(header => ({
     wch: header.width ?? 20  // wch = width in characters
   }));
+
+  // Aplicar estilos a la cabecera (primera fila)
+  const headerStyle = {
+    font: { bold: true },
+    fill: { fgColor: { rgb: 'F5F5DC' } }, // Beige/crema
+    alignment: { horizontal: 'center', vertical: 'center' }
+  };
+
+  // Aplicar estilo a cada celda de la cabecera
+  const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
+  for (let col = range.s.c; col <= range.e.c; col++) {
+    const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+    if (worksheet[cellAddress]) {
+      worksheet[cellAddress].s = headerStyle;
+    }
+  }
 
   // Crear libro
   const workbook: XLSX.WorkBook = {
