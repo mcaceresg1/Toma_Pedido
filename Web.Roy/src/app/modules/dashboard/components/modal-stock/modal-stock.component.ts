@@ -136,6 +136,7 @@ export class ModalStockComponent implements OnInit {
                     it.stock + it.reservado - localCount - inListCount,
                   precio: (it as any)[`precio${this.data.listaPrecio}`],
                   enLista: inListCount,
+                  precioEditable: it.precioEditable && this.puedeCambiarPrecio(),
                 };
               })
             );
@@ -250,12 +251,19 @@ export class ModalStockComponent implements OnInit {
           }
         }
 
+        // Obtener el precioEditable original del producto
+        const productoOriginal = this.listProductos().find(
+          (prod) => prod.codProducto === it.codProducto
+        );
+        const precioEditableOriginal = productoOriginal?.precioEditable ?? false;
+
         return {
           ...it,
           reservando_local: localCount,
           disponible: it.stock - localCount - inListCount - -it.reservado,
           precio: item['precio' + p],
           enLista: inListCount,
+          precioEditable: precioEditableOriginal && this.puedeCambiarPrecio(),
         };
       })
     );
