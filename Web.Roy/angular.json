@@ -35,13 +35,7 @@
               "src/styles.scss",
               "node_modules/ngx-spinner/animations/ball-scale-multiple.css"
             ],
-            "scripts": [],
-            "externalDependencies": [
-              "stream",
-              "crypto",
-              "fs",
-              "path"
-            ]
+            "scripts": []
           },
           "configurations": {
             "production": {

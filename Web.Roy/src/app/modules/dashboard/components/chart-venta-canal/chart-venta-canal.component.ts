@@ -1,14 +1,12 @@
 import { formatCurrency, CommonModule } from '@angular/common';
-import {
-  ApexTitleSubtitle,
-  ApexPlotOptions,
-  ApexTooltip,
-} from './../../../../../../node_modules/ng-apexcharts/lib/model/apex-types.d';
 import { Component, OnInit } from '@angular/core';
 
 import {
   ApexNonAxisChartSeries,
   ApexChart,
+  ApexTitleSubtitle,
+  ApexPlotOptions,
+  ApexTooltip,
   NgApexchartsModule,
 } from 'ng-apexcharts';
 
