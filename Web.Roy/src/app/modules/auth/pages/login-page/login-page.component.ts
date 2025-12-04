@@ -15,6 +15,7 @@ import { CookieService } from 'ngx-cookie-service';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { NgxSpinnerService } from 'ngx-spinner';
+import packageInfo from '../../../../../../../package.json';
 
 @Component({
   selector: 'app-login-page',
@@ -42,6 +43,9 @@ export class LoginPageComponent implements OnInit {
 
   //Formulario de Soporte
   errorSession: boolean = false;
+  
+  // Versión de la aplicación
+  appVersion: string = packageInfo.version;
   
   // Información del ambiente
   environmentInfo: any = {
