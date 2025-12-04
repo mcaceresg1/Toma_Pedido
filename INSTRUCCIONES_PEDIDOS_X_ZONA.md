@@ -110,3 +110,11 @@ Una vez modificado el stored procedure, la funcionalidad estará completamente o
 **Fecha de Implementación:** 30/12/2025  
 **Estado:** ✅ Frontend y Backend listos - Pendiente modificación de Stored Procedure
 
+
+
+
+
+
+
+
+

@@ -110,8 +110,9 @@ export class AddPedidoComponent implements OnInit, OnDestroy {
   }
 
   onClienteChanged() {
+    const rucSeleccionado = this.formPedido.get('cliente')?.value;
     const cliente = first(
-      filter(this.listClientes, (it) => it.rucCliente === this.rucCliente)
+      filter(this.listClientes, (it) => it.rucCliente === rucSeleccionado)
     );
     this.listPreciosVisible.set(!!cliente && isEmpty(cliente.precio));
   }
@@ -225,8 +226,9 @@ export class AddPedidoComponent implements OnInit, OnDestroy {
   }
 
   openStockDialog(): void {
+    const rucSeleccionado = this.formPedido.get('cliente')?.value;
     const cliente = first(
-      filter(this.listClientes, (it) => it.rucCliente === this.rucCliente)
+      filter(this.listClientes, (it) => it.rucCliente === rucSeleccionado)
     );
     const listaPrecio =
       !!cliente && !!cliente.precio
@@ -235,8 +237,8 @@ export class AddPedidoComponent implements OnInit, OnDestroy {
     if (
       isEmpty(listaPrecio) ||
       isNil(listaPrecio) ||
-      isNil(this.rucCliente) ||
-      isEmpty(this.rucCliente)
+      isNil(rucSeleccionado) ||
+      isEmpty(rucSeleccionado)
     ) {
       Swal.fire({
         title: 'Atención!',
@@ -250,7 +252,7 @@ export class AddPedidoComponent implements OnInit, OnDestroy {
         minWidth: '80vw',
         data: {
           listaPrecio,
-          rucCliente: this.rucCliente!,
+          rucCliente: rucSeleccionado!,
           agregarProducto: this.agregarProducto.bind(this),
         },
       });
@@ -366,7 +368,7 @@ export class AddPedidoComponent implements OnInit, OnDestroy {
     console.log('Productos: ', productos);
 
     const data: NuevoPedido = {
-      ruc: this.formPedido.get('cliente')?.value,
+      ruc: this.formPedido.get('cliente')?.value || '',
       precio: this.formPedido.get('listaPrecios')?.value,
       moneda: this.formPedido.get('moneda')?.value,
       subtotal: parseFloat(this.calcularSubtotal().toFixed(9)),

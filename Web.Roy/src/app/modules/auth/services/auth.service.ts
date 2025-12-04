@@ -25,6 +25,11 @@ export class AuthService {
 
     return this.http.post<any>(url, body);
   }
+  
+  getEnvironmentInfo(): Observable<any> {
+    const url = `${this.URL}login/GetEnvironmentInfo`;
+    return this.http.get<any>(url);
+  }
 
   //NOTA: BORRAR LOS cookieService QUE NO SE USAN
   logout() {

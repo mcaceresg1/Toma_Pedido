@@ -15,12 +15,69 @@
         private readonly IBcLogin _bcLogin;
         private readonly IConfiguration _config;
         private readonly ILogger<LoginController> _logger;
+        private readonly IWebHostEnvironment _environment;
 
-        public LoginController(IBcLogin login, IConfiguration configuration, ILogger<LoginController> logger)
+        public LoginController(IBcLogin login, IConfiguration configuration, ILogger<LoginController> logger, IWebHostEnvironment environment)
         {
             _bcLogin = login;
             _config = configuration;
             _logger = logger;
+            _environment = environment;
+        }
+
+        [HttpGet]
+        [Route("GetEnvironmentInfo")]
+        public IActionResult GetEnvironmentInfo()
+        {
+            try
+            {
+                var isDevelopment = _environment.IsDevelopment();
+                var environment = isDevelopment ? "Desarrollo" : "Producción";
+                
+                string connStringLogin;
+                string connStringData;
+                
+                if (isDevelopment)
+                {
+                    connStringLogin = _config.GetConnectionString("DevConnStringDbLogin") ?? "";
+                    connStringData = _config.GetConnectionString("DevConnStringDbData") ?? "";
+                }
+                else
+                {
+                    connStringLogin = _config.GetConnectionString("OrgConnStringDbLogin") ?? "";
+                    connStringData = _config.GetConnectionString("OrgConnStringDbData") ?? "";
+                }
+                
+                // Extraer el nombre de la base de datos de la cadena de conexión
+                var dbLoginName = ExtractDatabaseName(connStringLogin);
+                var dbDataName = ExtractDatabaseName(connStringData);
+                
+                return Ok(new
+                {
+                    ambiente = environment,
+                    bdLogin = dbLoginName,
+                    bdData = dbDataName
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener información del ambiente");
+                return StatusCode(500, new { message = "Error al obtener información del ambiente" });
+            }
+        }
+        
+        private string ExtractDatabaseName(string connectionString)
+        {
+            if (string.IsNullOrEmpty(connectionString))
+                return "N/A";
+                
+            var match = System.Text.RegularExpressions.Regex.Match(
+                connectionString, 
+                @"initial catalog=([^;]+)", 
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase
+            );
+            
+            return match.Success ? match.Groups[1].Value : "N/A";
         }
 
         [HttpPost]

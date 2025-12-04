@@ -132,3 +132,11 @@ GO
 **Fecha de Implementación:** 30/12/2025  
 **Estado:** ✅ Código listo - Pendiente creación del Stored Procedure
 
+
+
+
+
+
+
+
+

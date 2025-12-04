@@ -83,7 +83,6 @@
           <div class="flex flex-col w-full justify-end">
             <label class="text-xs">Cliente</label>
             <ng-select
-              [(ngModel)]="rucCliente"
               (search)="onSearch($event)"
               (change)="onClienteChanged()"
               formControlName="cliente"

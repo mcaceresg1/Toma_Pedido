@@ -45,6 +45,17 @@
                     <p class="poppins-regular text-xs text-neutral-600">
                       V_1.0.0
                     </p>
+                    <div class="mt-2 text-xs">
+                      <p class="text-neutral-500">
+                        <strong>Ambiente:</strong> {{ environmentInfo.ambiente }}
+                      </p>
+                      <p class="text-neutral-500" *ngIf="environmentInfo.bdLogin">
+                        <strong>BD Login:</strong> {{ environmentInfo.bdLogin }}
+                      </p>
+                      <p class="text-neutral-500" *ngIf="environmentInfo.bdData">
+                        <strong>BD Datos:</strong> {{ environmentInfo.bdData }}
+                      </p>
+                    </div>
                   </div>
                 </form>
               </div>
