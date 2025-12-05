@@ -19,14 +19,14 @@ namespace ApiRoy.Controllers
 
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] string? zonaFiltro = null)
         {
             try
             {
                 var user = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
                 if (user == null) { return Unauthorized(); }
 
-                var ubigeos = await _bcUbigeo.GetAll(user);
+                var ubigeos = await _bcUbigeo.GetAll(user, zonaFiltro);
                 return StatusCode(StatusCodes.Status200OK, ubigeos);
             }
             catch (Exception ex)

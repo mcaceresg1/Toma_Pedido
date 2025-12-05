@@ -12,8 +12,9 @@ export class UbigeoService {
 
   constructor(private http: HttpClient) {}
 
-  getAll(): Observable<Ubigeo[]> {
-    return this.http.get<Ubigeo[]>(this.URL);
+  getAll(zonaFiltro?: string): Observable<Ubigeo[]> {
+    const options = zonaFiltro ? { params: { zonaFiltro } } : {};
+    return this.http.get<Ubigeo[]>(this.URL, options);
   }
 
   getUbigeosByZona(zonaCodigo: string): Observable<string[]> {

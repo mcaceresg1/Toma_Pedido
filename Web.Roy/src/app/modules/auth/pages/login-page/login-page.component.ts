@@ -43,6 +43,14 @@ export class LoginPageComponent implements OnInit {
   //Formulario de Soporte
   errorSession: boolean = false;
 
+  // Información del sistema
+  appVersion: string = '2.1.0';
+  environmentInfo = {
+    ambiente: 'Cargando...',
+    bdLogin: '',
+    bdData: ''
+  };
+
   constructor(
     private authService: AuthService,
     private cookie: CookieService,
@@ -50,7 +58,24 @@ export class LoginPageComponent implements OnInit {
     private spinner: NgxSpinnerService
   ) {}
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.loadEnvironmentInfo();
+  }
+
+  private loadEnvironmentInfo(): void {
+    this.authService.getEnvironmentInfo().subscribe({
+      next: (data) => {
+        this.environmentInfo = data;
+      },
+      error: () => {
+        this.environmentInfo = {
+          ambiente: 'No disponible',
+          bdLogin: 'N/A',
+          bdData: 'N/A'
+        };
+      }
+    });
+  }
 
   //TODO: Formulario de Soporte
   get passwordInvalidfs(): boolean {

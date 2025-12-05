@@ -4,7 +4,7 @@ namespace ApiRoy.Contracts
 
     public interface IBcUbigeo
     {
-        Task<List<EcUbigeo>> GetAll(string usuario);
+        Task<List<EcUbigeo>> GetAll(string usuario, string? zonaFiltro = null);
         Task<List<string>> GetByZona(string zonaCodigo, string usuario);
         Task<string> SetByZona(string zonaCodigo, List<string> ubigeos, string usuario);
     }

@@ -1,14 +1,41 @@
-USE [ROE01]
+USE ROE01;
 GO
 
-/****** Object:  StoredProcedure [dbo].[SP_HISTORICO_ORDEN_PEDIDO_POR_ZONA]    Script Date: 30/12/2025 ******/
+-- =============================================
+-- STORED PROCEDURE: SP_HISTORICO_ORDEN_PEDIDO_POR_ZONA
+-- PROYECTO: Toma Pedido
+-- BASE DE DATOS: ROE01 (Producción) / ROE001 (Desarrollo)
+-- TABLA: PED009, PED008, CUE001, CUE004, CUE005, CUE010, INV009, ROE00.dbo.GLO002
+-- FECHA CREACIÓN: 04/12/2025 20:37:22 - Sistema
+-- =============================================
+-- 
+-- Descripción: Obtiene el histórico de pedidos agrupados y ordenados por zona geográfica.
+--              Incluye información del vendedor, cliente, ubigeo y zona asignada.
+--
+-- Parámetros:
+--   @FECHAINICIO DATETIME - Fecha inicial del rango de búsqueda (opcional)
+--   @FECHAFIN DATETIME - Fecha final del rango de búsqueda (opcional)
+--   @IDVENDEDOR INT - ID del vendedor para filtrar (opcional, NULL=todos)
+--   @CONDESPACHO BIT - Filtrar por estado de despacho (opcional):
+--                      1=Solo con despacho, 0=Solo sin despacho, NULL=Todos
+--
+-- Retorna: Lista de pedidos con campos de vendedor, operación, fecha, cliente,
+--          total, estado, guía, factura, ubigeo y zona
+--
+-- NOTA: Este stored procedure debe crearse en CADA base de datos (ROE01 y ROE001)
+-- =============================================
+
 SET ANSI_NULLS ON
 GO
 
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE OR ALTER PROCEDURE [dbo].[SP_HISTORICO_ORDEN_PEDIDO_POR_ZONA]
+IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[SP_HISTORICO_ORDEN_PEDIDO_POR_ZONA]') AND type in (N'P', N'PC'))
+    DROP PROCEDURE [dbo].[SP_HISTORICO_ORDEN_PEDIDO_POR_ZONA];
+GO
+
+CREATE PROCEDURE [dbo].[SP_HISTORICO_ORDEN_PEDIDO_POR_ZONA]
     @FECHAINICIO DATETIME = NULL,
     @FECHAFIN DATETIME = NULL,
     @IDVENDEDOR INT = NULL,
@@ -46,10 +73,7 @@ BEGIN
     LEFT JOIN CUE001 ON PED009.RUC = CUE001.RUC
     -- JOIN con tabla de ubigeos para obtener Departamento, Provincia, Distrito
     LEFT JOIN CUE005 ON CUE001.UBIGEO = CUE005.UBIGEO
-    -- JOIN con tabla de zonas (CUE010 se relaciona con CUE005 por UBIGEO, pero CUE010 puede tener otro nombre de campo)
-    -- Si CUE010 tiene un campo diferente, ajustar aquí. Posibles opciones:
-    -- LEFT JOIN CUE010 ON CUE005.UBIGEO = CUE010.UBIGEO_CODIGO
-    -- O si CUE010 tiene ZONA como código que se relaciona:
+    -- JOIN con tabla de zonas usando la columna ZONA de CUE005
     LEFT JOIN CUE010 ON CUE005.ZONA = CUE010.ZONA
     WHERE 
         PED009.IDDOCUMENTO = 13
@@ -63,3 +87,5 @@ BEGIN
 END
 GO
 
+PRINT 'Stored procedure [SP_HISTORICO_ORDEN_PEDIDO_POR_ZONA] creado exitosamente.';
+GO

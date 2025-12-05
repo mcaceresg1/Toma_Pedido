@@ -41,6 +41,22 @@
                       INGRESAR
                     </button>
                   </div>
+                  
+                  <!-- Información del sistema -->
+                  <div class="mt-4 text-center">
+                    <p class="text-xs text-gray-600">V_{{ appVersion }}</p>
+                    <div class="mt-1 space-y-0.5">
+                      <p class="text-xs text-gray-500">
+                        <strong>Ambiente:</strong> {{ environmentInfo.ambiente }}
+                      </p>
+                      <p class="text-xs text-gray-500" *ngIf="environmentInfo.bdLogin">
+                        <strong>BD Login:</strong> {{ environmentInfo.bdLogin }}
+                      </p>
+                      <p class="text-xs text-gray-500" *ngIf="environmentInfo.bdData">
+                        <strong>BD Datos:</strong> {{ environmentInfo.bdData }}
+                      </p>
+                    </div>
+                  </div>
                 </form>
               </div>
             </div>

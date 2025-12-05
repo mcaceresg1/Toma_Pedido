@@ -7,7 +7,7 @@
 -- Descripción: Script completo para instalar el módulo de Zonas y Ubigeos
 --              Incluye creación de tablas y stored procedures
 --
--- IMPORTANTE: Este script debe ejecutarse en la base de datos ROE01
+-- IMPORTANTE: Este script debe ejecutarse en la base de datos ROE001
 -- =============================================
 
 USE ROE01;
@@ -16,7 +16,7 @@ GO
 PRINT '=============================================';
 PRINT 'INSTALACIÓN DE MÓDULO ZONAS Y UBIGEOS';
 PRINT 'Proyecto: Toma de Pedidos';
-PRINT 'Base de Datos: ROE01';
+PRINT 'Base de Datos: ROE001 (3 ceros)';
 PRINT '=============================================';
 PRINT '';
 
@@ -66,8 +66,25 @@ PRINT '=============================================';
 PRINT '';
 
 -- =============================================
--- SP: NX_Zona_GetAll
+-- STORED PROCEDURE: NX_Zona_GetAll
+-- PROYECTO: Toma Pedido
+-- BASE DE DATOS: ROE01 (Producción) / ROE001 (Desarrollo)
+-- TABLA: CUE010 (Zonas)
+-- FECHA CREACIÓN: 04/12/2025 20:37:22 - Sistema
 -- =============================================
+-- 
+-- Descripción: Obtiene la lista completa de todas las zonas registradas
+--
+-- Parámetros: Ninguno
+--
+-- Retorna:
+--   ZonaCodigo VARCHAR(3) - Código de la zona
+--   Descripcion VARCHAR(100) - Descripción de la zona
+--   Corto VARCHAR(20) - Descripción corta
+--
+-- NOTA: Este stored procedure debe crearse en CADA base de datos (ROE01 y ROE001)
+-- =============================================
+
 IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[NX_Zona_GetAll]') AND type in (N'P', N'PC'))
     DROP PROCEDURE [dbo].[NX_Zona_GetAll];
 GO
@@ -98,8 +115,26 @@ PRINT '✓ NX_Zona_GetAll creado exitosamente';
 GO
 
 -- =============================================
--- SP: NX_Zona_GetById
+-- STORED PROCEDURE: NX_Zona_GetById
+-- PROYECTO: Toma Pedido
+-- BASE DE DATOS: ROE01 (Producción) / ROE001 (Desarrollo)
+-- TABLA: CUE010 (Zonas)
+-- FECHA CREACIÓN: 04/12/2025 20:37:22 - Sistema
 -- =============================================
+-- 
+-- Descripción: Obtiene una zona específica por su código
+--
+-- Parámetros:
+--   @ZonaCodigo VARCHAR(3) - Código de la zona a buscar
+--
+-- Retorna:
+--   ZonaCodigo VARCHAR(3) - Código de la zona
+--   Descripcion VARCHAR(100) - Descripción de la zona
+--   Corto VARCHAR(20) - Descripción corta
+--
+-- NOTA: Este stored procedure debe crearse en CADA base de datos (ROE01 y ROE001)
+-- =============================================
+
 IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[NX_Zona_GetById]') AND type in (N'P', N'PC'))
     DROP PROCEDURE [dbo].[NX_Zona_GetById];
 GO
@@ -131,8 +166,25 @@ PRINT '✓ NX_Zona_GetById creado exitosamente';
 GO
 
 -- =============================================
--- SP: NX_Zona_InsertUpdate
+-- STORED PROCEDURE: NX_Zona_InsertUpdate
+-- PROYECTO: Toma Pedido
+-- BASE DE DATOS: ROE01 (Producción) / ROE001 (Desarrollo)
+-- TABLA: CUE010 (Zonas)
+-- FECHA CREACIÓN: 04/12/2025 20:37:22 - Sistema
 -- =============================================
+-- 
+-- Descripción: Crea una nueva zona o actualiza una existente
+--
+-- Parámetros:
+--   @ZonaCodigo VARCHAR(3) - Código de la zona (obligatorio, 3 caracteres)
+--   @Descripcion VARCHAR(100) - Descripción de la zona (obligatorio)
+--   @Corto VARCHAR(20) - Descripción corta (opcional)
+--   @IsUpdate BIT - 0=Crear nueva, 1=Actualizar existente
+--   @Mensaje NVARCHAR(MAX) OUTPUT - Mensaje de resultado (success|... o error|...)
+--
+-- NOTA: Este stored procedure debe crearse en CADA base de datos (ROE01 y ROE001)
+-- =============================================
+
 IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[NX_Zona_InsertUpdate]') AND type in (N'P', N'PC'))
     DROP PROCEDURE [dbo].[NX_Zona_InsertUpdate];
 GO
@@ -218,8 +270,22 @@ PRINT '✓ NX_Zona_InsertUpdate creado exitosamente';
 GO
 
 -- =============================================
--- SP: NX_Zona_Delete
+-- STORED PROCEDURE: NX_Zona_Delete
+-- PROYECTO: Toma Pedido
+-- BASE DE DATOS: ROE01 (Producción) / ROE001 (Desarrollo)
+-- TABLA: CUE010 (Zonas)
+-- FECHA CREACIÓN: 04/12/2025 20:37:22 - Sistema
 -- =============================================
+-- 
+-- Descripción: Elimina una zona. No permite eliminar si tiene ubigeos asignados
+--
+-- Parámetros:
+--   @ZonaCodigo VARCHAR(3) - Código de la zona a eliminar
+--   @Mensaje NVARCHAR(MAX) OUTPUT - Mensaje de resultado (success|... o error|...)
+--
+-- NOTA: Este stored procedure debe crearse en CADA base de datos (ROE01 y ROE001)
+-- =============================================
+
 IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[NX_Zona_Delete]') AND type in (N'P', N'PC'))
     DROP PROCEDURE [dbo].[NX_Zona_Delete];
 GO
@@ -274,13 +340,39 @@ PRINT '=============================================';
 PRINT '';
 
 -- =============================================
--- SP: NX_Ubigeo_GetAll
+-- STORED PROCEDURE: NX_Ubigeo_GetAll
+-- PROYECTO: Toma Pedido
+-- BASE DE DATOS: ROE01 (Producción) / ROE001 (Desarrollo)
+-- TABLA: CUE005 (Ubigeos)
+-- FECHA CREACIÓN: 04/12/2025 20:37:22 - Sistema
 -- =============================================
+-- 
+-- Descripción: Obtiene la lista completa de todos los ubigeos con su zona asignada.
+--              Si se proporciona @ZonaFiltro, ordena según prioridad:
+--              1) Ubigeos de la zona filtrada
+--              2) Ubigeos sin zona
+--              3) Ubigeos de otras zonas
+--              Dentro de cada grupo se ordena por DEPARTAMENTO, PROVINCIA, DISTRITO
+--
+-- Parámetros:
+--   @ZonaFiltro VARCHAR(3) - Código de zona para ordenamiento prioritario (opcional)
+--
+-- Retorna:
+--   Ubigeo VARCHAR(6) - Código de ubigeo
+--   Distrito VARCHAR(100) - Nombre del distrito
+--   Provincia VARCHAR(100) - Nombre de la provincia
+--   Departamento VARCHAR(100) - Nombre del departamento
+--   Zona VARCHAR(3) - Código de zona asignada (puede ser NULL)
+--
+-- NOTA: Este stored procedure debe crearse en CADA base de datos (ROE01 y ROE001)
+-- =============================================
+
 IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[NX_Ubigeo_GetAll]') AND type in (N'P', N'PC'))
     DROP PROCEDURE [dbo].[NX_Ubigeo_GetAll];
 GO
 
 CREATE PROCEDURE [dbo].[NX_Ubigeo_GetAll]
+    @ZonaFiltro VARCHAR(3) = NULL
 AS
 BEGIN
     SET NOCOUNT ON;
@@ -290,9 +382,23 @@ BEGIN
         DISTRITO AS Distrito,
         PROVINCIA AS Provincia,
         DEPARTAMENTO AS Departamento,
-        ZONA AS Zona
+        ZONA AS Zona,
+        -- Orden de prioridad para sorting
+        CASE 
+            WHEN @ZonaFiltro IS NOT NULL AND ZONA = @ZonaFiltro THEN 1  -- Primero: zona igual al filtro
+            WHEN ZONA IS NULL THEN 2                                     -- Segundo: sin zona
+            ELSE 3                                                       -- Tercero: otras zonas
+        END AS OrdenPrioridad
     FROM CUE005
-    ORDER BY DEPARTAMENTO, PROVINCIA, DISTRITO;
+    ORDER BY 
+        CASE 
+            WHEN @ZonaFiltro IS NOT NULL AND ZONA = @ZonaFiltro THEN 1
+            WHEN ZONA IS NULL THEN 2
+            ELSE 3
+        END,
+        DEPARTAMENTO, 
+        PROVINCIA, 
+        DISTRITO;
 END;
 GO
 
@@ -300,8 +406,24 @@ PRINT '✓ NX_Ubigeo_GetAll creado exitosamente';
 GO
 
 -- =============================================
--- SP: NX_Ubigeo_GetByZona
+-- STORED PROCEDURE: NX_Ubigeo_GetByZona
+-- PROYECTO: Toma Pedido
+-- BASE DE DATOS: ROE01 (Producción) / ROE001 (Desarrollo)
+-- TABLA: CUE005 (Ubigeos)
+-- FECHA CREACIÓN: 04/12/2025 20:37:22 - Sistema
 -- =============================================
+-- 
+-- Descripción: Obtiene los códigos de ubigeos asignados a una zona específica
+--
+-- Parámetros:
+--   @ZonaCodigo VARCHAR(3) - Código de la zona a consultar
+--
+-- Retorna:
+--   UBIGEO VARCHAR(6) - Lista de códigos de ubigeo de la zona
+--
+-- NOTA: Este stored procedure debe crearse en CADA base de datos (ROE01 y ROE001)
+-- =============================================
+
 IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[NX_Ubigeo_GetByZona]') AND type in (N'P', N'PC'))
     DROP PROCEDURE [dbo].[NX_Ubigeo_GetByZona];
 GO
@@ -324,8 +446,24 @@ PRINT '✓ NX_Ubigeo_GetByZona creado exitosamente';
 GO
 
 -- =============================================
--- SP: NX_Ubigeo_SetByZona
+-- STORED PROCEDURE: NX_Ubigeo_SetByZona
+-- PROYECTO: Toma Pedido
+-- BASE DE DATOS: ROE01 (Producción) / ROE001 (Desarrollo)
+-- TABLA: CUE005 (Ubigeos)
+-- FECHA CREACIÓN: 04/12/2025 20:37:22 - Sistema
 -- =============================================
+-- 
+-- Descripción: Asigna o actualiza la lista de ubigeos pertenecientes a una zona.
+--              Remueve asignaciones anteriores y establece las nuevas.
+--
+-- Parámetros:
+--   @ZonaCodigo VARCHAR(3) - Código de la zona a actualizar
+--   @Ubigeos NVARCHAR(MAX) - Array JSON de códigos de ubigeo: ["010101", "010102", ...]
+--   @Mensaje NVARCHAR(MAX) OUTPUT - Mensaje de resultado (success|... o error|...)
+--
+-- NOTA: Este stored procedure debe crearse en CADA base de datos (ROE01 y ROE001)
+-- =============================================
+
 IF EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[NX_Ubigeo_SetByZona]') AND type in (N'P', N'PC'))
     DROP PROCEDURE [dbo].[NX_Ubigeo_SetByZona];
 GO

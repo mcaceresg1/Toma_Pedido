@@ -50,14 +50,22 @@ Este documento establece las **normas principales y obligatorias** que deben seg
 ### ✅ OBLIGATORIO
 **TODAS las operaciones de base de datos DEBEN usar stored procedures. NO se permiten queries SQL directos.**
 
-### Nomenclatura de Stored Procedures
+### Nomenclatura de Stored Procedures y Archivos SQL
 
-#### 1.1. Prefijos por Proyecto:
+#### 1.1. Prefijos y Nomenclatura (OBLIGATORIO)
+
+Esta sección cubre dos aspectos relacionados:
+- **A)** Nombres de stored procedures **dentro de la base de datos**
+- **B)** Nombres de archivos SQL **físicos** en el sistema de archivos
+
+---
+
+**A) STORED PROCEDURES (dentro de la BD):**
 
 **Trace ERP y Toma Pedido:**
 - **Prefijo obligatorio:** `NX_` (Nexwork)
 - **Formato:** `NX_[Entidad]_[Accion]`
-- **Ejemplos:**
+- **Ejemplos de SPs:**
   - `NX_Receta_GetAll`
   - `NX_Pedido_InsertUpdate`
   - `NX_Cliente_Delete`
@@ -68,6 +76,40 @@ Este documento establece las **normas principales y obligatorias** que deben seg
   - `TIC_` - Tickets (ej: `TIC_ListaTickets`, `TIC_InsTicket`)
   - `GEN_` - General/Configuración (ej: `GEN_ListaCBO`)
 - **Formato:** `[PREFIJO]_[Entidad/Accion]`
+
+---
+
+**B) ARCHIVOS SQL (archivos físicos .sql):**
+
+**Scripts que crean SPs (van a la BD):**
+- **Prefijo:** `NX_` (igual que el SP que contiene)
+- **Formato:** `NX_[Entidad]_[Accion].sql`
+- **Ejemplos de archivos:**
+  - `NX_Zona_GetAll.sql` → crea el SP `NX_Zona_GetAll`
+  - `NX_Cliente_InsertUpdate.sql` → crea el SP `NX_Cliente_InsertUpdate`
+  - `NX_00_SCRIPT_MAESTRO_ZONAS_UBIGEOS.sql` → crea múltiples SPs
+
+**Scripts de utilidad/temporales (NO van a la BD):**
+- **Prefijos:** `TMP_` o `___` (tres guiones bajos)
+- **Uso:** Limpieza, actualización, inicialización, herramientas
+- **Ejemplos de archivos:**
+  - `___iniciar.bat` → script de inicio local
+  - `___ACTUALIZAR_SPS_DESARROLLO.sql` → limpia SPs antiguos
+  - `___ACTUALIZAR_SPS_PRODUCCION.sql` → limpia SPs en producción
+  - `TMP_Limpieza_SPs_Antiguos.sql` → script temporal de limpieza
+
+**Scripts especiales/heredados:**
+- **Prefijo:** `SP_` (mantener para compatibilidad)
+- **Ejemplo:** `SP_HISTORICO_ORDEN_PEDIDO_POR_ZONA.sql`
+
+**Documentación:**
+- **Prefijo:** `README_`
+- **Ejemplos:** `README_INICIAR.md`, `README_ZONAS_UBIGEOS.md`
+
+⚠️ **REGLA CLAVE:**
+- `NX_` en archivo → El archivo crea/actualiza SPs en la BD
+- `TMP_` o `___` en archivo → Script de soporte, NO crea SPs
+- El nombre del archivo debe coincidir con el SP que crea (si aplica)
 
 #### 1.2. Uso en Backend
 
@@ -157,7 +199,7 @@ E:\Fuentes Nexwork\Tickets_Control\SP Control de versiones\
 -- PROYECTO: [Trace ERP / Toma Pedido / Tickets Control]
 -- BASE DE DATOS: [Nombre BD]
 -- TABLA: [Tabla principal]
--- FECHA CREACIÓN: [DD/MM/YYYY HH:MM] - [Autor]
+-- FECHA CREACIÓN: [DD/MM/YYYY HH:MM:SS] - [Autor]
 -- =============================================
 -- 
 -- Descripción: [Descripción detallada]
@@ -200,6 +242,56 @@ GO
 PRINT 'Stored procedure [Prefijo_Nombre] creado exitosamente.';
 GO
 ```
+
+#### 1.4.1. Obtener Fecha/Hora para Cabecera (OBLIGATORIO)
+
+**La fecha/hora DEBE incluir SEGUNDOS en formato: `DD/MM/YYYY HH:MM:SS`**
+
+**Método RECOMENDADO - Crear archivo temporal y leer su fecha/hora:**
+
+Este método es el MÁS CONFIABLE porque obtiene la fecha/hora real del sistema de archivos:
+
+```bash
+# Paso 1: Crear un archivo temporal vacío (cualquier nombre)
+echo. > temp_datetime.txt
+
+# Paso 2: Obtener su fecha/hora de modificación (usar herramientas del IDE o sistema)
+# En File Explorer: Botón derecho > Propiedades > Fecha de modificación
+# En PowerShell: 
+Get-ChildItem temp_datetime.txt | Select-Object LastWriteTime
+
+# Paso 3: Copiar esa fecha/hora exacta
+# Ejemplo: 04/12/2025 20:37:22
+
+# Paso 4: Borrar el archivo temporal
+del temp_datetime.txt
+```
+
+**Métodos Alternativos (si el anterior falla):**
+
+**Método 2 - PowerShell:**
+```powershell
+Get-Date -Format "dd/MM/yyyy HH:mm:ss"
+```
+
+**Método 3 - SQL Server:**
+```sql
+SELECT CONVERT(VARCHAR, GETDATE(), 103) + ' ' + 
+       CONVERT(VARCHAR, GETDATE(), 108)
+-- Resultado: 04/12/2025 14:30:45
+```
+
+**Ejemplo de cabecera completa:**
+```sql
+-- FECHA CREACIÓN: 04/12/2025 20:37:22 - Sistema
+-- FECHA CREACIÓN: 04/12/2025 09:15:23 - Juan Pérez
+```
+
+⚠️ **IMPORTANTE:** 
+- Usar la fecha/hora REAL del sistema al momento de crear el SP
+- NO usar fechas/horas estimadas o inventadas
+- Incluir SIEMPRE los segundos (formato completo: HH:MM:SS)
+- El método del archivo temporal es el MÁS CONFIABLE
 
 #### 1.5. Mensajes de Retorno
 - **Éxito:** `'success|Mensaje descriptivo'`
@@ -1118,6 +1210,43 @@ ng serve --port 4200
 
 ### PASO 5: Documentar y Commit
 
+#### 5.1. Gestión de Versiones (OBLIGATORIO)
+
+**⚠️ ANTES de cada commit/push, SIEMPRE informar la versión actual y proponer cambio:**
+
+```
+📊 GESTIÓN DE VERSIÓN:
+- Versión actual: X.Y.Z (leer de package.json)
+- Cambios realizados: [Listar cambios principales]
+- Tipo de cambio:
+  • PATCH (X.Y.Z+1): Correcciones de bugs
+  • MINOR (X.Y+1.0): Nuevas funcionalidades
+  • MAJOR (X+1.0.0): Cambios que rompen compatibilidad
+  
+- Versión propuesta: [Nueva versión]
+  Razón: [Justificación del cambio]
+
+¿Apruebas el cambio de versión?
+```
+
+**Reglas de Versionado Semántico:**
+- **MAJOR (X.0.0)** - Cambios incompatibles, refactorización completa, nueva arquitectura
+- **MINOR (X.Y.0)** - Nuevas funcionalidades compatibles, nuevos módulos
+- **PATCH (X.Y.Z)** - Correcciones de bugs, ajustes menores, mejoras de rendimiento
+
+**Ejemplos:**
+- `1.0.0 → 1.0.1` - Se corrigió un bug en el login
+- `1.0.0 → 1.1.0` - Se agregó módulo de reportes
+- `1.0.0 → 2.0.0` - Se migró de .NET 6 a .NET 8
+
+**Actualizar versión en:**
+- `package.json` (línea 3: `"version": "X.Y.Z"`)
+- Componentes que muestren versión:
+  - `login-page.component.ts` → `appVersion: string = 'X.Y.Z'`
+  - `dashboard.component.ts` → `appVersion: string = 'X.Y.Z'`
+
+#### 5.2. Commit y Push
+
 ```bash
 # Verificar cambios
 git status
@@ -1145,6 +1274,7 @@ git push origin [rama]
 - `test:` - Tests
 - `chore:` - Configuración, dependencias
 - `sql:` - Stored procedures
+- `version:` - Actualización de versión
 
 ---
 

@@ -8,8 +8,8 @@ Este módulo permite la gestión de zonas geográficas y la asignación de ubige
 
 ## 🗄️ Bases de Datos
 
-- **ROE00**: Base de datos de configuración (usuarios, menús, empresas)
-- **ROE01**: Base de datos operativa (pedidos, clientes, productos, **zonas**, **ubigeos**)
+- **ROE000**: Base de datos de configuración (usuarios, menús, empresas)
+- **ROE001**: Base de datos operativa (pedidos, clientes, productos, **zonas**, **ubigeos**)
 
 ---
 
@@ -49,10 +49,10 @@ Este módulo permite la gestión de zonas geográficas y la asignación de ubige
 ```sql
 -- Abrir SQL Server Management Studio
 -- Conectarse al servidor
--- Seleccionar la base de datos ROE01
+-- Seleccionar la base de datos ROE001
 -- Ejecutar el script maestro:
 
-USE ROE01;
+USE ROE001;
 GO
 
 -- Ejecutar todo el contenido de:

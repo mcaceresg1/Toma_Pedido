@@ -26,14 +26,42 @@ export class AuthService {
     return this.http.post<any>(url, body);
   }
 
-  //NOTA: BORRAR LOS cookieService QUE NO SE USAN
+  getEnvironmentInfo(): Observable<any> {
+    const url = `${this.URL}login/GetEnvironmentInfo`;
+    return this.http.get<any>(url);
+  }
+
   logout() {
+    console.log('=== INICIANDO LOGOUT ===');
+    console.log('Cookies antes de eliminar:', this.cookieService.getAll());
+    
+    // Eliminar cookies sin especificar path (usa el path por defecto)
+    this.cookieService.delete('token');
+    this.cookieService.delete('userRol');
+    this.cookieService.delete('userLogin');
+    this.cookieService.delete('userData');
+    this.cookieService.delete('codVendedor');
+    this.cookieService.delete('test');
+    
+    // También intentar eliminar con path '/' por si acaso
     this.cookieService.delete('token', '/');
     this.cookieService.delete('userRol', '/');
     this.cookieService.delete('userLogin', '/');
     this.cookieService.delete('userData', '/');
     this.cookieService.delete('codVendedor', '/');
-
-    this.router.navigate(['/', 'auth']);
+    this.cookieService.delete('test', '/');
+    
+    // Limpiar localStorage por si se usa
+    localStorage.clear();
+    sessionStorage.clear();
+    
+    console.log('Cookies después de eliminar:', this.cookieService.getAll());
+    console.log('=== LOGOUT COMPLETADO - Redirigiendo a auth ===');
+    
+    // Redireccionar al login
+    this.router.navigate(['/', 'auth']).then(() => {
+      // Forzar recarga para limpiar cualquier estado en memoria
+      window.location.reload();
+    });
   }
 }

@@ -27,7 +27,7 @@ namespace ApiRoy.ResourceAccess
             }
         }
 
-        public Task<List<EcUbigeo>> GetAll(string usuario)
+        public Task<List<EcUbigeo>> GetAll(string usuario, string? zonaFiltro = null)
         {
             return Task.Run(() =>
             {
@@ -43,7 +43,12 @@ namespace ApiRoy.ResourceAccess
                     };
                 }
 
-                List<DbParametro> parametros = new List<DbParametro>();
+                List<DbParametro> parametros = new List<DbParametro>
+                {
+                    new DbParametro("@ZonaFiltro", SqlDbType.VarChar, ParameterDirection.Input, 
+                        string.IsNullOrEmpty(zonaFiltro) ? (object)DBNull.Value : zonaFiltro, 3)
+                };
+                
                 return dbData.ObtieneLista("NX_Ubigeo_GetAll", GetItem, parametros);
             });
         }

@@ -71,10 +71,12 @@ export class UbigeosPorZonaComponent implements OnInit {
   loadUbigeos(): void {
     this.loading = true;
     this.error = null;
-    this.ubigeoService.getAll().subscribe({
+    // Pasar zona seleccionada para ordenamiento optimizado en backend
+    this.ubigeoService.getAll(this.zonaSeleccionada || undefined).subscribe({
       next: (ubigeos) => {
         this.ubigeos = ubigeos;
-        // Aplicar filtro y ordenamiento
+        // El backend ya devuelve ordenado según prioridad
+        // Aplicar solo filtro de búsqueda
         this.filtrarUbigeos();
         this.loading = false;
       },

@@ -246,3 +246,5 @@ getPermisos(pantalla: string): boolean {
 
 
 
+
+

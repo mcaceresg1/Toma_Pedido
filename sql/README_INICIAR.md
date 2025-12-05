@@ -1,281 +1,170 @@
-# 🚀 Script de Inicio Automático - Toma de Pedidos
+# 🚀 GUÍA DE INICIALIZACIÓN - TOMA DE PEDIDOS
 
-## 📄 Archivo
-
-```
-___iniciar.bat
-```
-
-**Ubicación:** `E:\Fuentes Nexwork\Toma_Pedido\sql\___iniciar.bat`
+## ⚠️ IMPORTANTE: Ejecutar en este orden
 
 ---
 
-## 📝 ¿Qué hace este script?
+## 📋 PASO 1: Actualizar Stored Procedures en Base de Datos
 
-Este script automatiza **TODO** el proceso de inicio del sistema:
+### 1️⃣ Abrir SQL Server Management Studio
 
-1. ✅ Cierra procesos anteriores en puertos 5000 y 4200
-2. ✅ Verifica que existan los directorios Api.Roy y Web.Roy
-3. ✅ Verifica que estén instalados .NET y Node.js
-4. ✅ Restaura paquetes NuGet del backend
-5. ✅ Compila el backend (Api.Roy)
-6. ✅ Instala dependencias npm del frontend (si es necesario)
-7. ✅ Inicia el backend en una ventana separada
-8. ✅ Inicia el frontend en otra ventana separada
-9. ✅ Muestra las URLs de acceso
+```
+- Conectarse al servidor
+- Base de datos: ROE001 (3 ceros - operativa)
+```
+
+### 2️⃣ Ejecutar Scripts en ORDEN:
+
+#### **A) Limpiar SPs antiguos (PRIMERO):**
+```sql
+-- Archivo: ___ACTUALIZAR_SPS.sql
+-- Elimina SPs antiguos que usan tablas incorrectas
+```
+
+#### **B) Instalar módulo de Zonas y Ubigeos:**
+```sql
+-- Archivo: NX_00_SCRIPT_MAESTRO_ZONAS_UBIGEOS.sql
+-- Crea:
+--   - Tabla CUE010 (Zonas)
+--   - Columna ZONA en CUE005
+--   - 7 SPs de Zonas y Ubigeos
+```
+
+#### **C) Instalar SP de Pedidos por Zona:**
+```sql
+-- Archivo: SP_HISTORICO_ORDEN_PEDIDO_POR_ZONA.sql
+-- Crea SP para reporte de pedidos por zona
+```
+
+### 3️⃣ Verificar instalación:
+
+```sql
+USE ROE001;
+GO
+
+-- Ver SPs instalados
+SELECT name, create_date, modify_date
+FROM sys.procedures 
+WHERE name LIKE 'NX_%' OR name LIKE 'SP_HISTORICO%'
+ORDER BY name;
+
+-- Ver tablas
+SELECT name FROM sys.tables 
+WHERE name IN ('CUE010', 'CUE005');
+
+-- Ver columna ZONA en CUE005
+SELECT name FROM sys.columns 
+WHERE object_id = OBJECT_ID('CUE005') AND name = 'ZONA';
+```
 
 ---
 
-## 🚀 CÓMO USARLO
+## 📋 PASO 2: Iniciar Backend y Frontend
 
-### Opción 1: Doble clic
+### Opción A: Usar script automático
 
-```
-1. Ir a: E:\Fuentes Nexwork\Toma_Pedido\sql\
-2. Hacer doble clic en: ___iniciar.bat
-3. Esperar a que termine (abrirá 2 ventanas nuevas)
-```
-
-### Opción 2: Desde terminal
-
-```bash
-# Abrir PowerShell o CMD
+```batch
 cd E:\Fuentes Nexwork\Toma_Pedido\sql
 ___iniciar.bat
 ```
 
----
+Este script:
+- ✅ Mata procesos en puertos 5070 y 4200
+- ✅ Verifica directorios y herramientas
+- ✅ Compila el backend
+- ✅ Instala dependencias npm si es necesario
+- ✅ Inicia Backend y Frontend en ventanas separadas
 
-## 📺 ¿Qué verás?
+### Opción B: Manual
 
-El script abrirá **3 ventanas**:
-
-### Ventana 1: Script Principal (se puede cerrar después)
-```
-============================================
-  TOMA DE PEDIDOS - Iniciar Servicios
-  Backend (Api.Roy) y Frontend (Web.Roy)
-============================================
-
-[PASO 1] Verificando directorios...
-[PASO 2] Verificando herramientas...
-[PASO 3] Preparando Backend (Api.Roy)...
-[PASO 4] Backend preparado. Preparando Frontend (Web.Roy)...
-[PASO 5] Frontend preparado. Creando scripts de inicio...
-[PASO 6] Scripts creados. Iniciando servicios...
-[PASO 7] Servicios iniciados. Resumen final...
-
-============================================
-  Servicios Iniciados
-============================================
-
-Backend:  http://localhost:5000
-Frontend: http://localhost:4200
+**Backend:**
+```bash
+cd E:\Fuentes Nexwork\Toma_Pedido\Api.Roy
+dotnet restore
+dotnet build
+dotnet run
 ```
 
-### Ventana 2: Backend (NO CERRAR)
-```
-============================================
-  TOMA DE PEDIDOS - BACKEND
-============================================
-
-Servidor disponible en:
-  - HTTP:  http://localhost:5000
-  - HTTPS: https://localhost:5001
-
-API Health: http://localhost:5000/api/health
-
-Presiona Ctrl+C para detener el servidor
-
-============================================
-
-info: Microsoft.Hosting.Lifetime[14]
-      Now listening on: http://localhost:5000
-info: Microsoft.Hosting.Lifetime[0]
-      Application started. Press Ctrl+C to shut down.
-```
-
-### Ventana 3: Frontend (NO CERRAR)
-```
-============================================
-  TOMA DE PEDIDOS - FRONTEND
-============================================
-
-Servidor de desarrollo disponible en:
-  - URL: http://localhost:4200
-
-Presiona Ctrl+C para detener el servidor
-
-============================================
-
-✔ Browser application bundle generation complete.
-Initial Chunk Files | Names         | Size
-main.js            | main          | 2.5 MB
-...
-✔ Compiled successfully.
+**Frontend (en otra terminal):**
+```bash
+cd E:\Fuentes Nexwork\Toma_Pedido\Web.Roy
+npm install
+npm start
 ```
 
 ---
 
 ## 🌐 URLs de Acceso
 
-Después de que el script termine:
-
-| Servicio | URL | Descripción |
-|----------|-----|-------------|
-| **Frontend** | http://localhost:4200 | Aplicación Angular |
-| **Backend** | http://localhost:5000 | API REST |
-| **Backend (HTTPS)** | https://localhost:5001 | API REST (SSL) |
-| **Health Check** | http://localhost:5000/api/health | Verificar estado del API |
+- **Frontend:** http://localhost:4200
+- **Backend API:** http://localhost:5070
+- **Swagger:** http://localhost:5070/swagger
+- **Health Check:** http://localhost:5070/health
 
 ---
 
-## ⏱️ Tiempo Estimado
+## ✅ Checklist de Verificación
 
-- **Primera vez:** 5-10 minutos (instala dependencias npm)
-- **Siguiente vez:** 1-2 minutos (todo ya está instalado)
+Antes de usar la aplicación, verifica:
+
+- [ ] SQL Server ejecutándose
+- [ ] Base de datos ROE001 existe
+- [ ] Tabla CUE010 creada
+- [ ] Columna ZONA existe en CUE005
+- [ ] 7 SPs de Zonas/Ubigeos instalados
+- [ ] SP_HISTORICO_ORDEN_PEDIDO_POR_ZONA instalado
+- [ ] Backend corriendo en puerto 5070
+- [ ] Frontend corriendo en puerto 4200
+- [ ] Sin errores en consola del navegador
+- [ ] Login funciona correctamente
 
 ---
 
-## 🛑 CÓMO DETENER LOS SERVICIOS
+## 🐛 Solución de Problemas Comunes
 
-### Opción 1: Cerrar ventanas
-```
-Simplemente cierra las ventanas del Backend y Frontend
-```
+### Error: "Invalid object name 'Zonas'"
 
-### Opción 2: Ctrl+C
-```
-En cada ventana (Backend y Frontend):
-1. Presionar Ctrl+C
-2. Confirmar con Y (si pregunta)
-3. Cerrar la ventana
+**Causa:** SPs antiguos usan tabla 'Zonas' en lugar de 'CUE010'
+
+**Solución:**
+```sql
+-- 1. Ejecutar: ___ACTUALIZAR_SPS.sql (limpia SPs antiguos)
+-- 2. Ejecutar: NX_00_SCRIPT_MAESTRO_ZONAS_UBIGEOS.sql (instala nuevos SPs)
 ```
 
-### Opción 3: Ejecutar script de detención (si existe)
-```bash
+### Error: "Port 4200 is already in use"
+
+**Solución:**
+```batch
+-- Ejecutar el script que mata procesos:
 cd E:\Fuentes Nexwork\Toma_Pedido\sql
-detener-servicios.bat
+___iniciar.bat
+
+-- O manualmente:
+netstat -ano | findstr ":4200"
+taskkill /F /PID [PID_DEL_PROCESO]
 ```
+
+### Error 500 en "Pedidos por Zona"
+
+**Causa:** SP no instalado o usa tablas incorrectas
+
+**Solución:**
+```sql
+USE ROE001;
+-- Ejecutar: SP_HISTORICO_ORDEN_PEDIDO_POR_ZONA.sql
+```
+
+### Warning: "Module stream has been externalized"
+
+**Causa:** Librería xlsx-js-style usa módulos de Node.js
+
+**Solución:** Es un warning cosmético, NO afecta funcionalidad. Puede ignorarse.
 
 ---
 
-## ❌ SOLUCIÓN DE PROBLEMAS
+## 📞 Soporte
 
-### Error: "Puerto 5000 aun en uso"
-
-**Solución:**
-```bash
-# Buscar proceso usando el puerto
-netstat -ano | findstr :5000
-
-# Anotar el PID (última columna)
-# Cerrar el proceso (reemplazar 1234 con el PID real)
-taskkill /F /PID 1234
-```
-
-### Error: "Puerto 4200 aun en uso"
-
-**Solución:**
-```bash
-# Buscar proceso usando el puerto
-netstat -ano | findstr :4200
-
-# Cerrar el proceso
-taskkill /F /PID 1234
-```
-
-### Error: ".NET SDK no esta instalado"
-
-**Solución:**
-1. Descargar .NET 6.0 o 8.0 SDK
-2. Instalar
-3. Reiniciar terminal
-4. Verificar: `dotnet --version`
-
-### Error: "Node.js no esta instalado"
-
-**Solución:**
-1. Descargar Node.js LTS
-2. Instalar
-3. Reiniciar terminal
-4. Verificar: `node --version`
-
-### Error: "No se encuentra el directorio Api.Roy"
-
-**Solución:**
-- Verificar que estés en la carpeta correcta
-- El script debe ejecutarse desde `E:\Fuentes Nexwork\Toma_Pedido\sql\`
-
-### Error al compilar el backend
-
-**Solución:**
-```bash
-cd E:\Fuentes Nexwork\Toma_Pedido\Api.Roy
-dotnet clean
-dotnet restore
-dotnet build
-```
-
-### Error al instalar dependencias npm
-
-**Solución:**
-```bash
-cd E:\Fuentes Nexwork\Toma_Pedido\Web.Roy
-rm -rf node_modules package-lock.json  # PowerShell
-npm cache clean --force
-npm install
-```
-
----
-
-## 📋 REQUISITOS PREVIOS
-
-- ✅ Windows 10/11
-- ✅ .NET 6.0 o 8.0 SDK instalado
-- ✅ Node.js LTS instalado
-- ✅ Puertos 4200 y 5000 libres
-
----
-
-## 🔧 PERSONALIZACIÓN
-
-Si quieres cambiar los puertos, edita:
-
-### Backend (Api.Roy):
-```
-E:\Fuentes Nexwork\Toma_Pedido\Api.Roy\Properties\launchSettings.json
-```
-
-### Frontend (Web.Roy):
-```
-E:\Fuentes Nexwork\Toma_Pedido\Web.Roy\angular.json
-```
-
-Después edita el script `___iniciar.bat` para usar los nuevos puertos.
-
----
-
-## 📞 SOPORTE
-
-Para problemas o dudas:
-- Revisar los logs en las ventanas del Backend y Frontend
-- Revisar documentación: `NORMAS_DESARROLLO.md`
-- Consultar con el equipo de desarrollo
-
----
-
-## ✅ CHECKLIST DE USO
-
-Antes de ejecutar el script:
-
-- [ ] Estoy en la carpeta `sql/`
-- [ ] Tengo .NET SDK instalado
-- [ ] Tengo Node.js instalado
-- [ ] Los puertos 4200 y 5000 están libres
-- [ ] Tengo conexión a Internet (para restaurar paquetes)
-
----
-
-**¡Listo para usar!** 🚀
-
+Para más ayuda:
+- Ver: `NORMAS_DESARROLLO_CONSOLIDADAS.md`
+- Ver: `README_ZONAS_UBIGEOS.md`

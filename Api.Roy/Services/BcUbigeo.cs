@@ -12,11 +12,11 @@ namespace ApiRoy.Services
             _dbUbigeo = dbUbigeo;
         }
 
-        public async Task<List<EcUbigeo>> GetAll(string usuario)
+        public async Task<List<EcUbigeo>> GetAll(string usuario, string? zonaFiltro = null)
         {
             try
             {
-                return await _dbUbigeo.GetAll(usuario);
+                return await _dbUbigeo.GetAll(usuario, zonaFiltro);
             }
             catch (Exception ex)
             {

@@ -1,3 +1,12 @@
+/**
+ * NOTA IMPORTANTE:
+ * Esta utilidad usa 'xlsx-js-style' que genera un warning en consola:
+ * "Module stream has been externalized for browser compatibility"
+ * 
+ * Este warning es COSMÉTICO y NO afecta la funcionalidad.
+ * Es necesario para mantener los estilos (negritas, colores) en Excel.
+ * El warning puede ignorarse de forma segura.
+ */
 import * as XLSX from 'xlsx-js-style';
 import FileSaver from 'file-saver';
 

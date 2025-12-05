@@ -106,6 +106,16 @@ export class ModalStockComponent implements OnInit {
   }
 
   GetAllStock(): void {
+    console.log('🔵 [REDMI DEBUG] Iniciando GetAllStock');
+    console.log('🔵 [REDMI DEBUG] Parámetros:', {
+      producto: this.formStock.value.producto || '',
+      clases: '3,25',
+      codAlmacen: 7,
+      rucCliente: this.data.rucCliente,
+      page: this.page,
+      pageSize: this.pageSize
+    });
+    
     this.spinner.show();
     this.pedidos
       .getAllStock(
@@ -120,6 +130,9 @@ export class ModalStockComponent implements OnInit {
       )
       .subscribe({
         next: (resp) => {
+          console.log('✅ [REDMI DEBUG] Respuesta recibida:', resp);
+          console.log('✅ [REDMI DEBUG] Cantidad de productos:', resp.length);
+          
           this.spinner.hide();
           if (resp.length > 0) {
             this.listProductos.set(resp);
@@ -146,6 +159,7 @@ export class ModalStockComponent implements OnInit {
             this.paginatorIndex = this.page - 1;
             this.pageSize = this.pageSize;
           } else {
+            console.warn('⚠️ [REDMI DEBUG] Respuesta vacía - No hay productos');
             this.listProductos.set([]);
             this.listStockLocal.set([]);
             this.paginatorIndex = 0;
@@ -154,13 +168,19 @@ export class ModalStockComponent implements OnInit {
             this.pageSize = this.pageSize;
           }
         },
-        error: () => {
+        error: (err) => {
+          console.error('❌ [REDMI DEBUG] ERROR al cargar productos:', err);
+          console.error('❌ [REDMI DEBUG] Error completo:', JSON.stringify(err));
+          console.error('❌ [REDMI DEBUG] Status:', err.status);
+          console.error('❌ [REDMI DEBUG] Message:', err.message);
+          console.error('❌ [REDMI DEBUG] Error body:', err.error);
+          
           this.spinner.hide();
           this._snackbar.open(
-            'Ocurrió un error al obtener los productos.',
+            `Error al obtener productos: ${err.status || 'Desconocido'} - ${err.message || 'Sin detalles'}`,
             'OK',
             {
-              duration: 3000,
+              duration: 5000,
             }
           );
         },
