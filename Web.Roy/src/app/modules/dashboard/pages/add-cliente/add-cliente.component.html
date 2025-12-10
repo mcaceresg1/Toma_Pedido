@@ -113,9 +113,13 @@
             placeholder="Documento"
             value=""
             formControlName="ruc"
+            maxlength="11"
           />
           @if (formCliente.controls["ruc"].getError("required")) {
           <mat-error>Escriba el documento del cliente.</mat-error>
+          }
+          @if (formCliente.controls["ruc"].getError("pattern")) {
+          <mat-error>El documento debe tener exactamente 11 dígitos numéricos.</mat-error>
           }
         </mat-form-field>
 

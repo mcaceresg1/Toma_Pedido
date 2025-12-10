@@ -43,26 +43,26 @@ namespace ApiRoy.Controllers
                     connStringData = _config.GetConnectionString("DevConnStringDbData") ?? "";
                     
                     // Log detallado para debug
-                    _logger.LogWarning("[GetEnvironmentInfo] Ambiente: Development");
-                    _logger.LogWarning("[GetEnvironmentInfo] DevConnStringDbLogin: {ConnString}", connStringLogin);
-                    _logger.LogWarning("[GetEnvironmentInfo] DevConnStringDbData: {ConnString}", connStringData);
+                    _logger.LogDebug("[GetEnvironmentInfo] Ambiente: Development");
+                    _logger.LogDebug("[GetEnvironmentInfo] DevConnStringDbLogin: {ConnString}", connStringLogin);
+                    _logger.LogDebug("[GetEnvironmentInfo] DevConnStringDbData: {ConnString}", connStringData);
                 }
                 else
                 {
                     connStringLogin = _config.GetConnectionString("OrgConnStringDbLogin") ?? "";
                     connStringData = _config.GetConnectionString("OrgConnStringDbData") ?? "";
                     
-                    _logger.LogWarning("[GetEnvironmentInfo] Ambiente: Production");
-                    _logger.LogWarning("[GetEnvironmentInfo] OrgConnStringDbLogin: {ConnString}", connStringLogin);
-                    _logger.LogWarning("[GetEnvironmentInfo] OrgConnStringDbData: {ConnString}", connStringData);
+                    _logger.LogDebug("[GetEnvironmentInfo] Ambiente: Production");
+                    _logger.LogDebug("[GetEnvironmentInfo] OrgConnStringDbLogin: {ConnString}", connStringLogin);
+                    _logger.LogDebug("[GetEnvironmentInfo] OrgConnStringDbData: {ConnString}", connStringData);
                 }
                 
                 // Extraer el nombre de la base de datos de la cadena de conexión
                 var dbLoginName = ExtractDatabaseName(connStringLogin);
                 var dbDataName = ExtractDatabaseName(connStringData);
                 
-                _logger.LogWarning("[GetEnvironmentInfo] BD Login extraída: {DbLogin}", dbLoginName);
-                _logger.LogWarning("[GetEnvironmentInfo] BD Datos extraída: {DbData}", dbDataName);
+                _logger.LogDebug("[GetEnvironmentInfo] BD Login extraída: {DbLogin}", dbLoginName);
+                _logger.LogDebug("[GetEnvironmentInfo] BD Datos extraída: {DbData}", dbDataName);
                 
                 return Ok(new
                 {

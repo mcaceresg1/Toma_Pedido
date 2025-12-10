@@ -35,7 +35,7 @@ namespace ApiRoy
                     if (File.Exists(devConfigPath))
                     {
                         builder.Configuration.AddJsonFile("appsettings.Development.json", optional: false, reloadOnChange: true);
-                        Log.Warning("[Program.cs] appsettings.Development.json cargado explícitamente desde: {Path}", devConfigPath);
+                        Log.Information("[Program.cs] appsettings.Development.json cargado explícitamente desde: {Path}", devConfigPath);
                     }
                     else
                     {
@@ -48,8 +48,8 @@ namespace ApiRoy
                 {
                     var testConnLogin = builder.Configuration.GetConnectionString("DevConnStringDbLogin");
                     var testConnData = builder.Configuration.GetConnectionString("DevConnStringDbData");
-                    Log.Warning("[Program.cs DEBUG] DevConnStringDbLogin: {Conn}", testConnLogin ?? "NULL");
-                    Log.Warning("[Program.cs DEBUG] DevConnStringDbData: {Conn}", testConnData ?? "NULL");
+                    Log.Debug("[Program.cs] DevConnStringDbLogin: {Conn}", testConnLogin ?? "NULL");
+                    Log.Debug("[Program.cs] DevConnStringDbData: {Conn}", testConnData ?? "NULL");
                 }
 
                 // Agregar Serilog

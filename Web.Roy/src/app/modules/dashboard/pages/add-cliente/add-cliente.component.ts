@@ -75,7 +75,10 @@ export class AddClienteComponent implements OnInit {
     tipoDocumento?: FormControl<string | null>;
   }>({
     razon: new FormControl<string>('', [Validators.required]),
-    ruc: new FormControl<string>('', [Validators.required]),
+    ruc: new FormControl<string>('', [
+      Validators.required,
+      Validators.pattern(/^\d{11}$/),
+    ]),
     direccion: new FormControl<string>('', [Validators.required]),
     telefono: new FormControl<string>('', [Validators.required]),
     ciudad: new FormControl<string>('', [Validators.required]),
@@ -223,8 +226,26 @@ export class AddClienteComponent implements OnInit {
   saveCliente(): void {
     this.spinner.show();
 
+    // Limpiar el RUC: eliminar espacios y caracteres no numéricos, tomar solo los primeros 11 dígitos
+    const rucRaw = this.formCliente.get('ruc')?.value || '';
+    const rucLimpio = rucRaw.toString().replace(/\D/g, '').substring(0, 11);
+
+    // Validar que el RUC tenga exactamente 11 dígitos
+    if (rucLimpio.length !== 11) {
+      this.spinner.hide();
+      Swal.fire({
+        title: 'Error de validación',
+        text: 'El RUC debe tener exactamente 11 dígitos numéricos.',
+        icon: 'error',
+        confirmButtonColor: '#17a2b8',
+        confirmButtonText: 'Ok',
+      });
+      return;
+    }
+
     const data: NuevoCliente = {
       ...this.formCliente.value,
+      ruc: rucLimpio, // Usar el RUC limpio
       ubigeo: this.ubigeo()?.ubigeo,
     };
     this.pedidosService.crearCliente(data).subscribe({

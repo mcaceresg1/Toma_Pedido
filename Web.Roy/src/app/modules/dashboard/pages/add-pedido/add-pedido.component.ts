@@ -348,6 +348,35 @@ export class AddPedidoComponent implements OnInit, OnDestroy {
   savePedido(): void {
     this.spinner.show();
 
+    // Validar que haya productos
+    if (this.listProdAgregados.length === 0) {
+      this.spinner.hide();
+      Swal.fire({
+        title: 'Error de validación',
+        text: 'Debe incluir al menos un producto en el pedido.',
+        icon: 'error',
+        confirmButtonColor: '#17a2b8',
+        confirmButtonText: 'Ok',
+      });
+      return;
+    }
+
+    // Extraer y limpiar el RUC (solo números, máximo 11 dígitos)
+    const rucRaw = this.formPedido.get('cliente')?.value || '';
+    const rucLimpio = rucRaw.toString().replace(/\D/g, '').substring(0, 11);
+
+    if (rucLimpio.length !== 11) {
+      this.spinner.hide();
+      Swal.fire({
+        title: 'Error de validación',
+        text: 'El RUC debe tener exactamente 11 dígitos.',
+        icon: 'error',
+        confirmButtonColor: '#17a2b8',
+        confirmButtonText: 'Ok',
+      });
+      return;
+    }
+
     const productos: ProductoNuevoPedido[] = this.listProdAgregados.map(
       (item, index) => {
         return {
@@ -366,9 +395,10 @@ export class AddPedidoComponent implements OnInit, OnDestroy {
     );
 
     console.log('Productos: ', productos);
+    console.log('RUC limpio: ', rucLimpio);
 
     const data: NuevoPedido = {
-      ruc: this.formPedido.get('cliente')?.value || '',
+      ruc: rucLimpio,
       precio: this.formPedido.get('listaPrecios')?.value,
       moneda: this.formPedido.get('moneda')?.value,
       subtotal: parseFloat(this.calcularSubtotal().toFixed(9)),
@@ -413,8 +443,27 @@ export class AddPedidoComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.spinner.hide();
-        this._snackBar.open('Ocurrió un error al guardar el pedido...', 'OK', {
-          duration: 3000,
+        
+        // Mostrar errores de validación específicos si están disponibles
+        let mensajeError = 'Ocurrió un error al guardar el pedido.';
+        if (err.error && err.error.errors && Array.isArray(err.error.errors)) {
+          const errores = err.error.errors.map((e: any) => {
+            if (e.Errors && Array.isArray(e.Errors)) {
+              return e.Errors.join(', ');
+            }
+            return e.ErrorMessage || e;
+          }).join('\n');
+          mensajeError = `Error de validación:\n${errores}`;
+        } else if (err.error && err.error.message) {
+          mensajeError = err.error.message;
+        }
+
+        Swal.fire({
+          title: 'Error al guardar pedido',
+          text: mensajeError,
+          icon: 'error',
+          confirmButtonColor: '#17a2b8',
+          confirmButtonText: 'Ok',
         });
       },
     });

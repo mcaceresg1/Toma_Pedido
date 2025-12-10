@@ -168,19 +168,58 @@ namespace ApiRoy.ResourceAccess
 
         public string GetConnectionDetails()
         {
-            string pattern = @"data source=([\d.]+);initial catalog=([\w\d_]+)";
-            Match match = Regex.Match(DbConnString, pattern, RegexOptions.IgnoreCase);
+            try
+            {
+                // Obtener ambas cadenas de conexión
+                string connStringLogin = DbConnString;
+                string connStringData = string.Empty;
+                
+                if (_environment.IsDevelopment())
+                {
+                    connStringData = _StaticConfig.GetConnectionString("DevConnStringDbData") ?? string.Empty;
+                }
+                else
+                {
+                    connStringData = _StaticConfig.GetConnectionString("OrgConnStringDbData") ?? string.Empty;
+                }
 
-            if (match.Success)
-            {
-                string ip = match.Groups[1].Value;
-                string databaseName = match.Groups[2].Value;
-                return $"IP: {ip}, Origen: {databaseName}";
+                // Extraer nombres de bases de datos usando el mismo método que LoginController
+                string dbLoginName = ExtractDatabaseName(connStringLogin);
+                string dbDataName = ExtractDatabaseName(connStringData);
+
+                if (!string.IsNullOrEmpty(dbLoginName) && !string.IsNullOrEmpty(dbDataName))
+                {
+                    return $"BD Login: {dbLoginName} | BD Data: {dbDataName}";
+                }
+                else if (!string.IsNullOrEmpty(dbLoginName))
+                {
+                    return $"BD Login: {dbLoginName}";
+                }
+                else
+                {
+                    return "No se pudo extraer la información del string de conexión.";
+                }
             }
-            else
+            catch (Exception ex)
             {
-                return "No se pudo extraer la información del string de conexión.";
+                return $"Error al obtener información de conexión: {ex.Message}";
             }
+        }
+
+        private string ExtractDatabaseName(string connectionString)
+        {
+            if (string.IsNullOrEmpty(connectionString))
+                return string.Empty;
+            
+            // Usar el mismo patrón que LoginController que ya funciona correctamente
+            // Buscar "Initial Catalog=" o "Database=" (ambos formatos)
+            var match = Regex.Match(
+                connectionString, 
+                @"(?:initial\s+catalog|database)\s*=\s*([^;]+)", 
+                RegexOptions.IgnoreCase
+            );
+            
+            return match.Success ? match.Groups[1].Value.Trim() : string.Empty;
         }
     }
 }
