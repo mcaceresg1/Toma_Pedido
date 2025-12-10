@@ -248,3 +248,4 @@ getPermisos(pantalla: string): boolean {
 
 
 
+

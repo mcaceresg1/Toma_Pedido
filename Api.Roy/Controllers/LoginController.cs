@@ -1,4 +1,4 @@
-﻿namespace ApiRoy.Controllers
+namespace ApiRoy.Controllers
 {
     using ApiRoy.Contracts;
     using ApiRoy.Models;
@@ -41,16 +41,28 @@
                 {
                     connStringLogin = _config.GetConnectionString("DevConnStringDbLogin") ?? "";
                     connStringData = _config.GetConnectionString("DevConnStringDbData") ?? "";
+                    
+                    // Log detallado para debug
+                    _logger.LogWarning("[GetEnvironmentInfo] Ambiente: Development");
+                    _logger.LogWarning("[GetEnvironmentInfo] DevConnStringDbLogin: {ConnString}", connStringLogin);
+                    _logger.LogWarning("[GetEnvironmentInfo] DevConnStringDbData: {ConnString}", connStringData);
                 }
                 else
                 {
                     connStringLogin = _config.GetConnectionString("OrgConnStringDbLogin") ?? "";
                     connStringData = _config.GetConnectionString("OrgConnStringDbData") ?? "";
+                    
+                    _logger.LogWarning("[GetEnvironmentInfo] Ambiente: Production");
+                    _logger.LogWarning("[GetEnvironmentInfo] OrgConnStringDbLogin: {ConnString}", connStringLogin);
+                    _logger.LogWarning("[GetEnvironmentInfo] OrgConnStringDbData: {ConnString}", connStringData);
                 }
                 
                 // Extraer el nombre de la base de datos de la cadena de conexión
                 var dbLoginName = ExtractDatabaseName(connStringLogin);
                 var dbDataName = ExtractDatabaseName(connStringData);
+                
+                _logger.LogWarning("[GetEnvironmentInfo] BD Login extraída: {DbLogin}", dbLoginName);
+                _logger.LogWarning("[GetEnvironmentInfo] BD Datos extraída: {DbData}", dbDataName);
                 
                 return Ok(new
                 {
@@ -70,10 +82,11 @@
         {
             if (string.IsNullOrEmpty(connectionString))
                 return "N/A";
-                
+            
+            // Buscar "Initial Catalog=" o "Database=" (ambos formatos)
             var match = System.Text.RegularExpressions.Regex.Match(
                 connectionString, 
-                @"initial catalog=([^;]+)", 
+                @"(?:initial catalog|database)=([^;]+)", 
                 System.Text.RegularExpressions.RegexOptions.IgnoreCase
             );
             
@@ -123,7 +136,16 @@
                 new Claim(ClaimTypes.Name, p.Usuario)
             };
             var secretKey = _config.GetSection("JWT:SECRET_KEY").Value ?? throw new InvalidOperationException("JWT Secret Key no configurada");
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
+            
+            // Validar tamaño de clave para HmacSha512 (mínimo 64 bytes = 512 bits)
+            var keyBytes = Encoding.UTF8.GetBytes(secretKey);
+            if (keyBytes.Length < 64)
+            {
+                _logger.LogError("JWT SECRET_KEY es demasiado corta. Longitud actual: {Length} bytes. Se requiere mínimo 64 bytes (512 bits) para HmacSha512Signature", keyBytes.Length);
+                throw new InvalidOperationException($"JWT SECRET_KEY debe tener al menos 64 bytes (512 bits). Longitud actual: {keyBytes.Length} bytes");
+            }
+            
+            var key = new SymmetricSecurityKey(keyBytes);
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
             
             // Leer tiempo de expiración desde configuración

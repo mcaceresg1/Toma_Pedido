@@ -28,6 +28,30 @@ namespace ApiRoy
                 
                 var builder = WebApplication.CreateBuilder(args);
 
+                // FORZAR carga explícita de appsettings.Development.json
+                if (builder.Environment.IsDevelopment())
+                {
+                    var devConfigPath = Path.Combine(builder.Environment.ContentRootPath, "appsettings.Development.json");
+                    if (File.Exists(devConfigPath))
+                    {
+                        builder.Configuration.AddJsonFile("appsettings.Development.json", optional: false, reloadOnChange: true);
+                        Log.Warning("[Program.cs] appsettings.Development.json cargado explícitamente desde: {Path}", devConfigPath);
+                    }
+                    else
+                    {
+                        Log.Warning("[Program.cs] appsettings.Development.json NO encontrado en: {Path}", devConfigPath);
+                    }
+                }
+
+                // DEBUG: Verificar qué connection strings se están cargando
+                if (builder.Environment.IsDevelopment())
+                {
+                    var testConnLogin = builder.Configuration.GetConnectionString("DevConnStringDbLogin");
+                    var testConnData = builder.Configuration.GetConnectionString("DevConnStringDbData");
+                    Log.Warning("[Program.cs DEBUG] DevConnStringDbLogin: {Conn}", testConnLogin ?? "NULL");
+                    Log.Warning("[Program.cs DEBUG] DevConnStringDbData: {Conn}", testConnData ?? "NULL");
+                }
+
                 // Agregar Serilog
                 builder.Host.UseSerilog((context, services, configuration) => configuration
                     .ReadFrom.Configuration(context.Configuration)
