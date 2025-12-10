@@ -135,29 +135,56 @@ catch (Exception ex)
 ### Reglas específicas:
 
 #### 3.1. Estructura de Bases de Datos
-- **Base de configuración:** Usuarios, menús, empresas
-- **Base de datos operativa:** Pedidos, clientes, productos, zonas, ubigeos
+
+| Ambiente | BD Login | BD Data | Servidor |
+|----------|----------|---------|----------|
+| **DESARROLLO** | ROE000 | ROE001 | 161.132.56.68 |
+| **PRODUCCIÓN** | ROE00 | ROE01 | 161.132.56.68 |
+
+- **Base de configuración (Login):** Usuarios, menús, empresas
+- **Base de datos operativa (Data):** Pedidos, clientes, productos, zonas, ubigeos
 - **Separación:** Configuración vs Datos operacionales
 
+> ⚠️ **IMPORTANTE:** Las bases de DESARROLLO tienen 3 dígitos (ROE000, ROE001), las de PRODUCCIÓN tienen 2 dígitos (ROE00, ROE01). NO confundir.
+
 #### 3.2. Configuración de Conexión
-```json
-// appsettings.json / appsettings.Development.json
-{
-  "ConnectionStrings": {
-    "Default": "Server=xxx;Database=TomaPedido_Dev;User Id=xxx;Password=***;TrustServerCertificate=True;"
-  }
-}
+
+**DESARROLLO (User Secrets):**
+```bash
+# Configurar en la máquina de desarrollo
+cd Api.Roy
+dotnet user-secrets set "ConnectionStrings:DevConnStringDbLogin" "data source=161.132.56.68;initial catalog=ROE000;user id=sa;password=***;TrustServerCertificate=True"
+dotnet user-secrets set "ConnectionStrings:DevConnStringDbData" "data source=161.132.56.68;initial catalog=ROE001;user id=sa;password=***;TrustServerCertificate=True"
+```
+
+**PRODUCCIÓN (IIS web.config):**
+```xml
+<!-- C:\inetpub\wwwroot\api.roy\web.config -->
+<environmentVariables>
+  <environmentVariable name="ConnectionStrings__OrgConnStringDbLogin" value="data source=161.132.56.68;initial catalog=ROE00;..." />
+  <environmentVariable name="ConnectionStrings__OrgConnStringDbData" value="data source=161.132.56.68;initial catalog=ROE01;..." />
+</environmentVariables>
 ```
 
 #### 3.3. Selección de Base de Datos
 - El parámetro `empresa` o contexto de usuario determina el alcance de datos
 - Validar permisos según usuario y empresa
 - No exponer datos de otras empresas
+- El código usa `IsDevelopment()` para seleccionar `DevConnString*` o `OrgConnString*`
 
 #### 3.4. Stored Procedures por Base de Datos
 - Stored procedures de configuración (usuarios, menús, empresas)
 - Stored procedures de operaciones (pedidos, clientes, productos, zonas, ubigeos)
 - **IMPORTANTE:** Ejecutar los SPs en cada ambiente (dev, test, prod)
+
+#### 3.5. Resumen de Variables de Conexión
+
+| Variable | Desarrollo | Producción |
+|----------|------------|------------|
+| `DevConnStringDbLogin` | ROE000 | - |
+| `DevConnStringDbData` | ROE001 | - |
+| `OrgConnStringDbLogin` | - | ROE00 |
+| `OrgConnStringDbData` | - | ROE01 |
 
 #### 3.5. Verificación de Ambiente
 - **Desarrollo:** Usar base de datos de desarrollo para pruebas

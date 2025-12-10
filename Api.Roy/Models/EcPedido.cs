@@ -9,7 +9,7 @@ namespace ApiRoy.Models
         public string Ruc { get; set; } = string.Empty;
         
         public string? Precio { get; set; }
-        public string? Moneda { get; set; }
+        public int? Moneda { get; set; }
         
         [Range(0, double.MaxValue, ErrorMessage = "El subtotal debe ser mayor o igual a 0")]
         public double Subtotal { get; set; }

@@ -11,12 +11,15 @@
     public class PedidosController : Controller
     {
         private readonly IBcPedido _bcPedido;
+        private readonly ILogger<PedidosController> _logger;
 
         public PedidosController(
-            IBcPedido bcPedido
+            IBcPedido bcPedido,
+            ILogger<PedidosController> logger
             )
         {
             _bcPedido = bcPedido;
+            _logger = logger;
         }
 
 
@@ -208,16 +211,32 @@
                 var user = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
                 if (user == null) { return Unauthorized(); }
 
+                _logger.LogInformation("SavePedido - Usuario: {User}, RUC: {Ruc}, Total: {Total}", user, pedido.Ruc, pedido.Total);
+                
+                var resultado = await _bcPedido.SavePedido(user, maquina, pedido);
+                
+                _logger.LogInformation("SavePedido - Pedido guardado exitosamente para usuario: {User}", user);
+                
                 return StatusCode(StatusCodes.Status200OK, new
                 {
-                    ok = await _bcPedido.SavePedido(user, maquina, pedido),
+                    ok = resultado,
                     message = "Pedido creado correctamente"
                 });
 
             }
             catch (Exception ex)
             {
-                throw new Exception(ex.Message, ex);
+                _logger.LogError(ex, "SavePedido - ERROR al guardar pedido. Usuario: {User}, RUC: {Ruc}, Mensaje: {Message}, InnerException: {Inner}", 
+                    User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value,
+                    pedido?.Ruc,
+                    ex.Message,
+                    ex.InnerException?.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    ok = false,
+                    message = $"Error al guardar pedido: {ex.Message}",
+                    detail = ex.InnerException?.Message
+                });
             }
         }
         [Authorize]
