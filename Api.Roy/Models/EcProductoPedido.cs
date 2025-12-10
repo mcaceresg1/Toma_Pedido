@@ -44,7 +44,7 @@ namespace ApiRoy.Models
 
     public class EcNuevoPedidoProducto
     {
-        public int CodProd { get; set; }
+        public string CodProd { get; set; } = string.Empty;
         public double CantProd { get; set; }
         public double PreUnit { get; set; }
         public double Igv { get; set; }

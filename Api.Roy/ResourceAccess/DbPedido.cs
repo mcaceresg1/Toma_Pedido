@@ -15,11 +15,13 @@
         private readonly DBManager dbData;
         private static IConfiguration _StaticConfig { get; set; } = null!;
         private readonly IWebHostEnvironment _environment;
+        private readonly ILogger<DbPedido> _logger;
 
-        public DbPedido(IConfiguration config, IWebHostEnvironment environment)
+        public DbPedido(IConfiguration config, IWebHostEnvironment environment, ILogger<DbPedido> logger)
         {
             _StaticConfig = config;
             this._environment = environment;
+            this._logger = logger;
             if (this._environment.IsDevelopment())
             {
                 var connString = _StaticConfig.GetConnectionString("DevConnStringDbData") ?? throw new InvalidOperationException("DevConnStringDbData no está configurado");
@@ -398,29 +400,49 @@
         }
         public async Task<bool> SavePedido(string usuario, string maquina, EcNuevoPedido pedido)
         {
+            _logger.LogInformation("=== INICIO SavePedido ===");
+            _logger.LogInformation("Usuario: {Usuario}, Maquina: {Maquina}", usuario, maquina);
+            _logger.LogInformation("Pedido - RUC: {Ruc}, Precio: {Precio}, Moneda: {Moneda}", pedido.Ruc, pedido.Precio, pedido.Moneda);
+            _logger.LogInformation("Pedido - Subtotal: {Subtotal}, IGV: {Igv}, Total: {Total}", pedido.Subtotal, pedido.Igv, pedido.Total);
+            _logger.LogInformation("Pedido - Productos: {Count} items", pedido.Productos?.Count ?? 0);
+            
+            if (pedido.Productos != null)
+            {
+                foreach (var p in pedido.Productos)
+                {
+                    _logger.LogInformation("  Producto - CodProd: {CodProd}, Cant: {Cant}, PreUnit: {PreUnit}, ImpTot: {ImpTot}, Almacen: {Almacen}", 
+                        p.CodProd, p.CantProd, p.PreUnit, p.ImpTot, p.Almacen);
+                }
+            }
 
             using (var connection = dbData.DbConn.conn)
             {
                 await connection.OpenAsync();
+                _logger.LogInformation("Conexión abierta exitosamente");
+                
                 string userTable, empresa01Table, empresa02Table, codEmpresa = "", dataTable;
                 if (this._environment.IsDevelopment())
                 {
                     userTable = "PEDIDOS00";
                     empresa01Table = "PEDIDOS01";
                     empresa02Table = "PEDIDOS02";
+                    _logger.LogInformation("Ambiente: DESARROLLO - Tables: {UserTable}, {Emp01}, {Emp02}", userTable, empresa01Table, empresa02Table);
                 }
                 else
                 {
                     userTable = "ROE00";
                     empresa01Table = "ROE01";
                     empresa02Table = "ROE02";
+                    _logger.LogInformation("Ambiente: PRODUCCION - Tables: {UserTable}, {Emp01}, {Emp02}", userTable, empresa01Table, empresa02Table);
                 }
 
                 using (var transaction = connection.BeginTransaction())
                 {
                     try
                     {
+                        _logger.LogInformation("Transacción iniciada");
                         var data = new Dictionary<string, object>();
+                        _logger.LogInformation("Obteniendo empresa del usuario...");
                         string uEmpresaQuery = $"SELECT EMPRESA_DEFECTO FROM {userTable}.DBO.SUP001 WHERE ALIAS LIKE @USUARIO;";
                         using (var command = new SqlCommand(uEmpresaQuery, connection, transaction))
                         {
@@ -430,6 +452,11 @@
                                 if (await reader.ReadAsync())
                                 {
                                     codEmpresa = reader.GetString(reader.GetOrdinal("EMPRESA_DEFECTO"));
+                                    _logger.LogInformation("Empresa obtenida: {CodEmpresa}", codEmpresa);
+                                }
+                                else
+                                {
+                                    _logger.LogWarning("No se encontró empresa para usuario: {Usuario}", usuario);
                                 }
                             }
                         }
@@ -446,6 +473,7 @@
                         {
                             throw new Exception("Empresa no válida");
                         }
+                        _logger.LogInformation("Buscando cliente con RUC: {Ruc} en tabla {DataTable}", pedido.Ruc, dataTable);
                         string clienteQuery = $"SELECT TOP(1) IDAUXILIAR, RAZON, RUC, DIRECCION FROM {dataTable}.DBO.CUE001 WHERE RUC = @RUC;";
                         using (var command = new SqlCommand(clienteQuery, connection, transaction))
                         {
@@ -458,6 +486,11 @@
                                     data.Add("cliente_razon", reader.GetString(reader.GetOrdinal("RAZON")));
                                     data.Add("cliente_ruc", reader.GetString(reader.GetOrdinal("RUC")));
                                     data.Add("cliente_direccion", reader.GetString(reader.GetOrdinal("DIRECCION")));
+                                    _logger.LogInformation("Cliente encontrado: {Razon}", data["cliente_razon"]);
+                                }
+                                else
+                                {
+                                    _logger.LogWarning("Cliente NO encontrado con RUC: {Ruc}", pedido.Ruc);
                                 }
                             }
                         }
@@ -502,9 +535,13 @@
                         }
                         decimal? doc_correlativo = (decimal?)data.GetValueOrDefault("doc_correlativo") + 1;
                         string correlativo = doc_correlativo!.ToString()!.PadLeft(7, '0');
+                        _logger.LogInformation("Correlativo generado: {Correlativo}", correlativo);
+                        
                         string precioEnTexto = Currency.ConvertirMontoATexto(pedido.Total);
                         var fechaActual = DateTime.Now.Date;
                         var horaActual = DateTime.Now.ToString("hh:mm tt");
+                        
+                        _logger.LogInformation("Insertando en PED009...");
                         string insertPed009Query = $@"
     INSERT INTO {dataTable}.DBO.PED009 (
         IDDOCUMENTO, OPERACION, TRANSACCION, REFERENCIA, AUXILIAR, NOMBRE, RUC, DIRECCION,
@@ -543,8 +580,10 @@
                             command.Parameters.AddWithValue("@MAQUINA", "web");
                             command.Parameters.AddWithValue("@TASA_DOLAR", 1.00);
                             await command.ExecuteNonQueryAsync();
+                            _logger.LogInformation("PED009 insertado exitosamente");
                         }
 
+                        _logger.LogInformation("Insertando {Count} productos en PED008...", pedido.Productos.Count);
                         string insertPed008Query = $@"
         INSERT INTO {dataTable}.DBO.PED008 (
             IDDOCUMENTO, OPERACION, TRANSACCION, IDPRODUCTO, IDALMACEN, CANTIDAD, MONTO,
@@ -579,12 +618,17 @@
                         using (var command = new SqlCommand(increaseQuery, connection, transaction))
                         {
                             await command.ExecuteNonQueryAsync();
+                            _logger.LogInformation("Correlativo incrementado en INV007");
                         }
+                        
                         transaction.Commit();
+                        _logger.LogInformation("=== PEDIDO GUARDADO EXITOSAMENTE - Operación: {Correlativo} ===", correlativo);
                         return true;
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        _logger.LogError(ex, "ERROR en SavePedido - Rollback ejecutado. Mensaje: {Message}, Inner: {Inner}", 
+                            ex.Message, ex.InnerException?.Message);
                         transaction.Rollback();
                         throw;
                     }
