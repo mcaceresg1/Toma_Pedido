@@ -1001,7 +1001,7 @@
                     throw new InvalidOperationException("No se pudo extraer el nombre de la base de datos desde la connection string");
                 }
 
-                using (var connection = dbData.DbConn.conn)
+                using (var connection = new SqlConnection(connString))
                 {
                     await connection.OpenAsync();
                     
@@ -1065,7 +1065,7 @@
                     throw new InvalidOperationException("No se pudo extraer el nombre de la base de datos desde la connection string");
                 }
 
-                using (var connection = dbData.DbConn.conn)
+                using (var connection = new SqlConnection(connString))
                 {
                     await connection.OpenAsync();
                     

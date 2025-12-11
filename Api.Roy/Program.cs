@@ -98,6 +98,12 @@ namespace ApiRoy
 
 
             builder.Services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    // Configurar serialización JSON para usar camelCase (compatible con JavaScript/Angular)
+                    options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+                    options.JsonSerializerOptions.WriteIndented = false;
+                })
                 .ConfigureApiBehaviorOptions(options =>
                 {
                     // Personalizar respuesta de validación automática

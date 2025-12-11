@@ -4,7 +4,10 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/app",
-    "types": []
+    "types": [],
+    "paths": {
+      "stream": ["./src/polyfills/stream.polyfill"]
+    }
   },
   "files": [
     "src/main.ts"

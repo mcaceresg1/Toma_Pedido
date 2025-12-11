@@ -74,7 +74,7 @@
       </button>
     </div>
 
-    <form class="mb-3" [formGroup]="formCliente" autocomplete="off">
+    <form class="mb-3" [formGroup]="formCliente" autocomplete="off" novalidate>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 py-2 gap-2">
         <mat-form-field appearance="outline">
           <mat-select formControlName="tipoDocumento">
@@ -99,7 +99,7 @@
             placeholder="Numero"
             value=""
             formControlName="ruc"
-            [attr.maxlength]="getMaxLengthDocumento() ?? null"
+            [attr.maxlength]="getMaxLengthDocumento()"
             (keydown)="onDocumentoKeyDown($event)"
             (paste)="onDocumentoPaste($event)"
             (input)="onDocumentoInput($event)"
@@ -109,19 +109,19 @@
           <mat-error>Escriba el documento del cliente.</mat-error>
           }
           @if (formCliente.controls["ruc"].getError("pattern")) {
-          <mat-error>
-            @if (formCliente.controls["tipoDocumento"].value?.toLowerCase()?.includes('ruc')) {
-              El RUC debe tener exactamente 11 dígitos numéricos.
-            } @else if (formCliente.controls["tipoDocumento"].value?.toLowerCase()?.includes('dni')) {
-              El DNI debe tener exactamente 8 dígitos numéricos.
-            } @else if (formCliente.controls["tipoDocumento"].value?.toLowerCase()?.includes('extranjeria') || formCliente.controls["tipoDocumento"].value?.toLowerCase()?.includes('carnet') || formCliente.controls["tipoDocumento"].value?.toLowerCase()?.includes('ce')) {
-              El Carnet de Extranjería debe tener exactamente 6 caracteres alfanuméricos.
-            } @else if (formCliente.controls["tipoDocumento"].value?.toLowerCase()?.includes('pasaporte') || formCliente.controls["tipoDocumento"].value?.toLowerCase()?.includes('passport')) {
-              El Pasaporte debe tener exactamente 9 caracteres alfanuméricos.
+            @if (getTipoDocumentoSeleccionado() === 'ruc') {
+            <mat-error>El número de RUC debe tener exactamente 11 dígitos.</mat-error>
+            } @else if (getTipoDocumentoSeleccionado() === 'dni') {
+            <mat-error>El número de DNI debe tener exactamente 8 dígitos.</mat-error>
             } @else {
-              El documento no cumple con el formato requerido.
+              @if (getMaxLengthDocumento() === 6) {
+              <mat-error>El Carnet de Extranjería debe tener exactamente 6 caracteres.</mat-error>
+              } @else if (getMaxLengthDocumento() === 9) {
+              <mat-error>El Pasaporte debe tener exactamente 9 caracteres.</mat-error>
+              } @else {
+              <mat-error>Ingrese un número de documento válido.</mat-error>
+              }
             }
-          </mat-error>
           }
         </mat-form-field>
 
@@ -146,8 +146,12 @@
             placeholder="Dirección"
             value=""
             formControlName="direccion"
-            autocomplete="off"
+            autocomplete="new-password"
+            data-lpignore="true"
             data-form-type="other"
+            data-autocomplete="off"
+            name="direccion-cliente"
+            type="text"
           />
           <mat-icon matPrefix>map</mat-icon>
 

@@ -111,9 +111,49 @@ export class AddClienteComponent implements OnInit, OnDestroy {
     this.getCondiciones();
     this.getTiposDocumento();
     
-    // Escuchar cambios en el tipo de documento para actualizar la validación del campo RUC/DNI
-    this.formCliente.get('tipoDocumento')?.valueChanges.subscribe((tipoDoc) => {
-      this.actualizarValidacionDocumento(tipoDoc);
+    // Listener para limpiar todos los campos cuando cambie el tipo de documento
+    this.formCliente.get('tipoDocumento')?.valueChanges.subscribe(() => {
+      // Habilitar todos los campos primero (en caso de que estuvieran deshabilitados por cliente existente)
+      this.formCliente.get('razon')?.enable();
+      this.formCliente.get('direccion')?.enable();
+      this.formCliente.get('telefono')?.enable();
+      this.formCliente.get('ciudad')?.enable();
+      this.formCliente.get('contacto')?.enable();
+      this.formCliente.get('telefonoContacto')?.enable();
+      this.formCliente.get('correo')?.enable();
+      this.formCliente.get('ubigeo')?.enable();
+      this.formCliente.get('condicion')?.enable();
+      this.formCliente.get('diasCredito')?.enable();
+      
+      // Limpiar todos los campos excepto tipoDocumento
+      this.formCliente.patchValue({
+        ruc: '',
+        razon: '',
+        direccion: '',
+        telefono: '',
+        ciudad: '',
+        contacto: '',
+        telefonoContacto: '',
+        correo: '',
+        ubigeo: '',
+        condicion: '',
+        diasCredito: 0,
+      });
+      
+      // Limpiar errores y marcar como no tocados
+      Object.keys(this.formCliente.controls).forEach(key => {
+        if (key !== 'tipoDocumento') {
+          const control = this.formCliente.get(key);
+          if (control) {
+            control.setErrors(null);
+            control.markAsUntouched();
+          }
+        }
+      });
+      
+      // Resetear el último documento consultado y el ubigeo
+      this.ultimoDocumentoConsultado = '';
+      this.ubigeo.set(null);
     });
   }
 
@@ -125,109 +165,92 @@ export class AddClienteComponent implements OnInit, OnDestroy {
     }
   }
 
+
   /**
-   * Obtiene la longitud máxima para el atributo maxlength del input
+   * Obtiene el tipo de documento seleccionado buscando en el array de tipos
    */
-  getMaxLengthDocumento(): number | null {
-    const tipoDoc = this.formCliente.get('tipoDocumento')?.value || null;
-    const validacion = this.obtenerValidacionDocumento(tipoDoc);
-    return validacion.maxLength ?? null;
+  private getTipoDocumentoActual(): TipoDocumento | null {
+    const tipoDocControl = this.formCliente.get('tipoDocumento');
+    const tipoSeleccionado = tipoDocControl?.value;
+    
+    if (!tipoSeleccionado) {
+      return null;
+    }
+    
+    const tipos = this.tiposDocumento();
+    if (!tipos || tipos.length === 0) {
+      return null;
+    }
+    
+    return tipos.find(t => t.tipo === tipoSeleccionado) || null;
   }
 
   /**
-   * Obtiene la longitud máxima y el patrón de validación según el tipo de documento
-   * @returns { maxLength: number | null, pattern: RegExp | null }
+   * Obtiene la configuración de validación según el tipo de documento
+   * Retorna { maxLength: number, longitudEsperada: number | null, requiereValidacionExacta: boolean }
    */
-  private obtenerValidacionDocumento(tipoDoc: string | null): { maxLength: number | null; pattern: RegExp | null } {
-    if (!tipoDoc) {
-      return { maxLength: null, pattern: null };
-    }
-
-    const tipoDocLower = tipoDoc.toLowerCase();
+  private getConfiguracionDocumento(): { maxLength: number; longitudEsperada: number | null; requiereValidacionExacta: boolean } {
+    const tipoDoc = this.getTipoDocumentoActual();
     
-    // RUC: 11 dígitos
-    if (tipoDocLower.includes('ruc') || tipoDocLower === 'ruc') {
-      return { maxLength: 11, pattern: /^\d{11}$/ };
+    if (!tipoDoc || !tipoDoc.descripcion) {
+      return { maxLength: 20, longitudEsperada: null, requiereValidacionExacta: false };
     }
     
-    // DNI: 8 dígitos
-    if (tipoDocLower.includes('dni') || tipoDocLower === 'dni') {
-      return { maxLength: 8, pattern: /^\d{8}$/ };
+    const descripcion = tipoDoc.descripcion.toLowerCase().trim();
+    
+    if (descripcion === 'ruc') {
+      return { maxLength: 11, longitudEsperada: 11, requiereValidacionExacta: true };
+    } else if (descripcion === 'dni') {
+      return { maxLength: 8, longitudEsperada: 8, requiereValidacionExacta: true };
+    } else if (descripcion.includes('carnet') && descripcion.includes('extranjeria')) {
+      return { maxLength: 6, longitudEsperada: 6, requiereValidacionExacta: true };
+    } else if (descripcion === 'pasaporte') {
+      return { maxLength: 9, longitudEsperada: 9, requiereValidacionExacta: true };
     }
     
-    // Carnet de Extranjería: 6 caracteres (puede incluir letras y números)
-    if (tipoDocLower.includes('extranjeria') || tipoDocLower.includes('carnet') || tipoDocLower.includes('ce')) {
-      return { maxLength: 6, pattern: /^[A-Za-z0-9]{6}$/ };
-    }
-    
-    // Pasaporte: 9 caracteres (puede incluir letras y números)
-    if (tipoDocLower.includes('pasaporte') || tipoDocLower.includes('passport')) {
-      return { maxLength: 9, pattern: /^[A-Za-z0-9]{9}$/ };
-    }
-    
-    // Otros casos: sin validación de longitud
-    return { maxLength: null, pattern: null };
+    // Para cualquier otro tipo, sin límite específico (pero limitamos a 20 caracteres en el input)
+    return { maxLength: 20, longitudEsperada: null, requiereValidacionExacta: false };
   }
 
   /**
-   * Actualiza la validación del campo documento según el tipo seleccionado
-   * Este método se ejecuta cuando cambia el tipo de documento
+   * Obtiene el maxLength según el tipo de documento seleccionado
+   * RUC: 11, DNI: 8, Carnet Extranjería: 6, Pasaporte: 9, Otros: 20
    */
-  actualizarValidacionDocumento(tipoDoc: string | null): void {
-    const rucControl = this.formCliente.get('ruc');
-    if (!rucControl) return;
-
-    // Remover validadores anteriores
-    rucControl.clearValidators();
-    rucControl.addValidators([Validators.required]);
-
-    // Obtener validación según el tipo de documento
-    const validacion = this.obtenerValidacionDocumento(tipoDoc);
-
-    // LIMPIAR EL CAMPO: Cuando cambia el tipo de documento, es un nuevo inicio
-    rucControl.setValue('', { emitEvent: false });
-    rucControl.markAsUntouched();
-    rucControl.markAsPristine();
-
-    // Agregar validadores según el tipo de documento
-    if (validacion.pattern) {
-      rucControl.addValidators([Validators.pattern(validacion.pattern)]);
-    }
-
-    // Actualizar el maxlength en el DOM
-    requestAnimationFrame(() => {
-      const inputElement = document.querySelector('[formControlName="ruc"]') as HTMLInputElement;
-      if (inputElement) {
-        // Limpiar el valor en el DOM también
-        inputElement.value = '';
-        
-        if (validacion.maxLength !== null) {
-          inputElement.setAttribute('maxlength', validacion.maxLength.toString());
-        } else {
-          inputElement.removeAttribute('maxlength');
-        }
-        
-        // Disparar evento input para sincronizar con Angular
-        const inputEvent = new Event('input', { bubbles: true });
-        inputElement.dispatchEvent(inputEvent);
-      }
-    });
-    
-    // Validar inmediatamente
-    rucControl.updateValueAndValidity();
+  getMaxLengthDocumento(): number {
+    const config = this.getConfiguracionDocumento();
+    return config.maxLength;
   }
 
   /**
-   * Maneja el evento keydown para prevenir la entrada de caracteres no permitidos (máscara variable)
-   * y también maneja el evento Enter para avanzar al siguiente campo
+   * Obtiene el tipo de documento como 'ruc' | 'dni' | 'otro'
+   */
+  getTipoDocumentoSeleccionado(): 'ruc' | 'dni' | 'otro' {
+    const tipoDoc = this.getTipoDocumentoActual();
+    
+    if (!tipoDoc || !tipoDoc.descripcion) {
+      return 'otro';
+    }
+    
+    const descripcion = tipoDoc.descripcion.toLowerCase().trim();
+    
+    if (descripcion === 'ruc') {
+      return 'ruc';
+    } else if (descripcion === 'dni') {
+      return 'dni';
+    }
+    
+    return 'otro';
+  }
+
+  /**
+   * Maneja el evento keydown para el campo Enter (avanzar al siguiente campo)
    */
   onDocumentoKeyDown(event: KeyboardEvent): void {
-    // Manejar el evento Enter para avanzar al siguiente campo
+    // Solo manejar Enter para avanzar al siguiente campo
     if (event.key === 'Enter') {
       this.presionandoEnter = true;
       event.preventDefault();
       
-      // Avanzar al siguiente campo
       const currentField = event.target as HTMLElement;
       const form = currentField.closest('form');
       if (form) {
@@ -238,195 +261,63 @@ export class AddClienteComponent implements OnInit, OnDestroy {
         }
       }
       
-      // Resetear el flag después de un breve delay
       setTimeout(() => {
         this.presionandoEnter = false;
       }, 100);
-      return;
-    }
-    
-    const input = event.target as HTMLInputElement;
-    const tipoDoc = this.formCliente.get('tipoDocumento')?.value || '';
-    const validacion = this.obtenerValidacionDocumento(tipoDoc);
-    
-    // Permitir teclas de control (backspace, delete, tab, etc.)
-    if (event.ctrlKey || event.metaKey || event.key === 'Backspace' || event.key === 'Delete' || 
-        event.key === 'Tab' || event.key === 'ArrowLeft' || event.key === 'ArrowRight' ||
-        event.key === 'ArrowUp' || event.key === 'ArrowDown' ||
-        event.key === 'Home' || event.key === 'End' || event.key === 'Escape' ||
-        event.key === 'F1' || event.key === 'F2' || event.key === 'F3' || event.key === 'F4' ||
-        event.key === 'F5' || event.key === 'F6' || event.key === 'F7' || event.key === 'F8' ||
-        event.key === 'F9' || event.key === 'F10' || event.key === 'F11' || event.key === 'F12') {
-      return;
-    }
-    
-    // Obtener el valor actual y la selección
-    const valorActual = input.value || '';
-    const start = input.selectionStart || 0;
-    const end = input.selectionEnd || 0;
-    const textoSeleccionado = valorActual.substring(start, end);
-    
-    // Calcular cuántos caracteres se eliminarían con la selección
-    const caracteresAEliminar = textoSeleccionado.length;
-    
-    // Calcular el nuevo valor que se generaría
-    const char = event.key;
-    const nuevoValor = valorActual.substring(0, start) + char + valorActual.substring(end);
-    
-    // Determinar qué caracteres permitir según el tipo
-    const esRucODni = tipoDoc?.toLowerCase().includes('ruc') || tipoDoc?.toLowerCase().includes('dni');
-    
-    // Limpiar el nuevo valor según el tipo
-    const nuevoValorLimpio = esRucODni 
-      ? nuevoValor.replace(/\D/g, '') 
-      : nuevoValor.replace(/[^A-Za-z0-9]/g, '');
-    
-    // Si no hay límite, solo validar el carácter
-    if (validacion.maxLength === null) {
-      if (!/[A-Za-z0-9]/.test(char)) {
-        event.preventDefault();
-        return;
-      }
-      return;
-    }
-    
-    // Verificar si el nuevo valor excedería el límite (máscara)
-    // Si hay texto seleccionado, se reemplazará, así que no cuenta como exceder
-    const valorActualLimpio = esRucODni 
-      ? valorActual.replace(/\D/g, '') 
-      : valorActual.replace(/[^A-Za-z0-9]/g, '');
-    
-    const longitudFinal = valorActualLimpio.length - caracteresAEliminar + (/\d/.test(char) || /[A-Za-z0-9]/.test(char) ? 1 : 0);
-    
-    if (longitudFinal > validacion.maxLength) {
-      event.preventDefault();
-      return;
-    }
-    
-    // Validar el carácter según el tipo
-    if (esRucODni) {
-      // Solo dígitos para RUC y DNI
-      if (!/\d/.test(char)) {
-        event.preventDefault();
-        return;
-      }
-    } else {
-      // Letras y números para otros tipos
-      if (!/[A-Za-z0-9]/.test(char)) {
-        event.preventDefault();
-        return;
-      }
     }
   }
 
-  /**
-   * Maneja el evento paste para aplicar la máscara al pegar texto
-   */
   onDocumentoPaste(event: ClipboardEvent): void {
-    event.preventDefault();
+    // Permitir pegar pero limitar según el tipo de documento
     const input = event.target as HTMLInputElement;
-    const tipoDoc = this.formCliente.get('tipoDocumento')?.value || '';
-    const validacion = this.obtenerValidacionDocumento(tipoDoc);
-    
-    // Obtener el texto pegado
     const textoPegado = event.clipboardData?.getData('text') || '';
+    const config = this.getConfiguracionDocumento();
+    const maxLength = config.maxLength;
     
-    // Determinar qué caracteres permitir según el tipo
-    const esRucODni = tipoDoc?.toLowerCase().includes('ruc') || tipoDoc?.toLowerCase().includes('dni');
-    const valorLimpio = esRucODni 
-      ? textoPegado.replace(/\D/g, '') // Solo dígitos para RUC y DNI
-      : textoPegado.replace(/[^A-Za-z0-9]/g, ''); // Letras y números para otros
+    let valorLimpio = textoPegado;
     
-    // Aplicar límite de la máscara
-    let valorFinal = valorLimpio;
-    if (validacion.maxLength !== null && valorLimpio.length > validacion.maxLength) {
-      valorFinal = valorLimpio.substring(0, validacion.maxLength);
+    // Para tipos con validación exacta, solo números
+    if (config.requiereValidacionExacta) {
+      valorLimpio = valorLimpio.replace(/\D/g, '');
     }
     
-    // Obtener la posición del cursor
-    const start = input.selectionStart || 0;
-    const end = input.selectionEnd || 0;
-    const valorActual = input.value || '';
-    
-    // Insertar el valor pegado en la posición del cursor
-    const nuevoValor = valorActual.substring(0, start) + valorFinal + valorActual.substring(end);
-    
-    // Limpiar y aplicar límite al valor completo
-    const valorCompletoLimpio = esRucODni 
-      ? nuevoValor.replace(/\D/g, '')
-      : nuevoValor.replace(/[^A-Za-z0-9]/g, '');
-    
-    let valorFinalCompleto = valorCompletoLimpio;
-    if (validacion.maxLength !== null && valorCompletoLimpio.length > validacion.maxLength) {
-      valorFinalCompleto = valorCompletoLimpio.substring(0, validacion.maxLength);
+    // Limitar longitud
+    if (maxLength > 0 && valorLimpio.length > maxLength) {
+      valorLimpio = valorLimpio.substring(0, maxLength);
     }
     
-    // Actualizar el input y el formulario
-    input.value = valorFinalCompleto;
+    event.preventDefault();
+    input.value = valorLimpio;
     const rucControl = this.formCliente.get('ruc');
     if (rucControl) {
-      rucControl.setValue(valorFinalCompleto, { emitEvent: true });
-      rucControl.markAsTouched();
-      
-      // Validar inmediatamente si hay un patrón
-      if (validacion.pattern) {
-        rucControl.updateValueAndValidity();
-      }
+      rucControl.setValue(valorLimpio, { emitEvent: true });
     }
-    
-    // Ajustar la posición del cursor
-    setTimeout(() => {
-      const nuevaPosicion = Math.min(start + valorFinal.length, valorFinalCompleto.length);
-      input.setSelectionRange(nuevaPosicion, nuevaPosicion);
-    }, 0);
   }
 
-  /**
-   * Maneja el evento input para limpiar y validar el valor según el tipo de documento
-   * Esta es la máscara principal que aplica el límite dinámico
-   */
   onDocumentoInput(event: Event): void {
-    event.stopPropagation(); // Evitar propagación
-    
+    // Limitar según el tipo de documento
     const input = event.target as HTMLInputElement;
-    const tipoDoc = this.formCliente.get('tipoDocumento')?.value || '';
-    const validacion = this.obtenerValidacionDocumento(tipoDoc);
-    const rucControl = this.formCliente.get('ruc');
+    const config = this.getConfiguracionDocumento();
+    const maxLength = config.maxLength;
     
-    // Determinar qué caracteres permitir según el tipo
-    const esRucODni = tipoDoc?.toLowerCase().includes('ruc') || tipoDoc?.toLowerCase().includes('dni');
-    let valorLimpio = esRucODni 
-      ? input.value.replace(/\D/g, '') // Solo dígitos para RUC y DNI
-      : input.value.replace(/[^A-Za-z0-9]/g, ''); // Letras y números para otros
+    let valor = input.value;
     
-    // Aplicar la máscara: recortar si excede el límite
-    let valorFinal = valorLimpio;
-    if (validacion.maxLength !== null && valorLimpio.length > validacion.maxLength) {
-      valorFinal = valorLimpio.substring(0, validacion.maxLength);
+    // Para tipos con validación exacta (RUC, DNI, Carnet, Pasaporte), solo números
+    if (config.requiereValidacionExacta) {
+      valor = valor.replace(/\D/g, '');
     }
     
-    // Si el valor cambió, actualizar tanto el input como el formulario
-    if (valorFinal !== input.value || valorFinal !== (rucControl?.value || '')) {
-      // Actualizar el input directamente
-      input.value = valorFinal;
-      
-      // Actualizar el formulario
+    // Limitar longitud
+    if (maxLength > 0 && valor.length > maxLength) {
+      valor = valor.substring(0, maxLength);
+    }
+    
+    if (input.value !== valor) {
+      input.value = valor;
+      const rucControl = this.formCliente.get('ruc');
       if (rucControl) {
-        rucControl.setValue(valorFinal, { emitEvent: false });
-        rucControl.markAsTouched();
-        
-        // Validar inmediatamente si hay un patrón
-        if (validacion.pattern) {
-          rucControl.updateValueAndValidity({ emitEvent: false });
-        }
+        rucControl.setValue(valor, { emitEvent: false });
       }
-      
-      // Forzar actualización del DOM usando requestAnimationFrame
-      requestAnimationFrame(() => {
-        if (input.value !== valorFinal) {
-          input.value = valorFinal;
-        }
-      });
     }
   }
 
@@ -448,86 +339,72 @@ export class AddClienteComponent implements OnInit, OnDestroy {
     const rucControl = this.formCliente.get('ruc');
     const tipoDocControl = this.formCliente.get('tipoDocumento');
     
-    if (!rucControl || !rucControl.value) return;
+    if (!rucControl || !rucControl.value || !tipoDocControl || !tipoDocControl.value) {
+      return;
+    }
 
-    const tipoDoc = tipoDocControl?.value?.toLowerCase() || '';
+    const config = this.getConfiguracionDocumento();
     const valorActual = rucControl.value.toString();
     
-    // Obtener validación según el tipo de documento
-    const validacion = this.obtenerValidacionDocumento(tipoDocControl?.value || null);
-    
-    // Limpiar el valor según el tipo de documento
-    let documentoLimpio: string;
-    const esRucODni = tipoDoc.includes('ruc') || tipoDoc.includes('dni');
-    
-    if (esRucODni) {
-      // Para RUC y DNI: solo dígitos
+    // Limpiar valor según el tipo
+    let documentoLimpio = valorActual;
+    if (config.requiereValidacionExacta) {
+      // Para tipos con validación exacta, solo dígitos
       documentoLimpio = valorActual.replace(/\D/g, '');
-    } else if (validacion.pattern) {
-      // Para otros tipos con validación (Carnet de Extranjería, Pasaporte): letras y números
-      documentoLimpio = valorActual.replace(/[^A-Za-z0-9]/g, '');
     } else {
-      // Para otros tipos sin validación: permitir cualquier carácter alfanumérico
-      documentoLimpio = valorActual.replace(/[^A-Za-z0-9]/g, '');
+      // Para otros tipos, limpiar espacios al inicio y final
+      documentoLimpio = valorActual.trim();
     }
     
-    // Si está vacío después de limpiar, no hacer nada
-    if (!documentoLimpio) return;
+    // Si está vacío, no hacer nada
+    if (!documentoLimpio || documentoLimpio.length === 0) {
+      return;
+    }
 
-    // Si hay validación de patrón, validar el formato
-    if (validacion.pattern) {
-      if (!validacion.pattern.test(documentoLimpio)) {
+    // Validar según el tipo de documento seleccionado
+    if (config.requiereValidacionExacta && config.longitudEsperada !== null) {
+      const longitudEsperada = config.longitudEsperada;
+      const patron = new RegExp(`^\\d{${longitudEsperada}}$`);
+
+      if (documentoLimpio.length !== longitudEsperada || !patron.test(documentoLimpio)) {
+        // No tiene la longitud correcta, marcar error
+        rucControl.setErrors({ pattern: true });
+        rucControl.markAsTouched();
+        return;
+      }
+    } else {
+      // Para otros tipos, solo validar que tenga al menos 1 carácter
+      if (documentoLimpio.length < 1) {
         rucControl.setErrors({ pattern: true });
         rucControl.markAsTouched();
         return;
       }
     }
 
-    // Solo consultar API para RUC y DNI (estos son los únicos que tienen API externa)
-    let tipo: 'ruc' | 'dni' | null = null;
+    // Si llegamos aquí, el documento es válido
+    // Limpiar errores previos antes de consultar
+    const erroresActuales = rucControl.errors || {};
+    if (erroresActuales['pattern']) {
+      delete erroresActuales['pattern'];
+      const nuevosErrores = Object.keys(erroresActuales).length > 0 ? erroresActuales : null;
+      rucControl.setErrors(nuevosErrores);
+      rucControl.updateValueAndValidity();
+    }
     
-    if (tipoDoc.includes('ruc') || tipoDoc === 'ruc') {
-      // Tipo RUC seleccionado: validar 11 dígitos
-      if (documentoLimpio.length === 11 && /^\d{11}$/.test(documentoLimpio)) {
-        tipo = 'ruc';
-      } else {
-        // Marcar error si no tiene 11 dígitos
-        rucControl.setErrors({ pattern: true });
-        rucControl.markAsTouched();
-        return;
-      }
-    } else if (tipoDoc.includes('dni') || tipoDoc === 'dni') {
-      // Tipo DNI seleccionado: validar 8 dígitos
-      if (documentoLimpio.length === 8 && /^\d{8}$/.test(documentoLimpio)) {
-        tipo = 'dni';
-      } else {
-        // Marcar error si no tiene 8 dígitos
-        rucControl.setErrors({ pattern: true });
-        rucControl.markAsTouched();
-        return;
-      }
-    } else if (!tipoDoc) {
-      // No hay tipo de documento seleccionado: inferir por cantidad de dígitos (como Trace ERP)
-      if (documentoLimpio.length === 11 && /^\d{11}$/.test(documentoLimpio)) {
-        tipo = 'ruc';
-      } else if (documentoLimpio.length === 8 && /^\d{8}$/.test(documentoLimpio)) {
-        tipo = 'dni';
-      } else {
-        // No coincide con RUC ni DNI
-        rucControl.setErrors({ pattern: true });
-        rucControl.markAsTouched();
-        return;
-      }
+    // Solo consultar para RUC y DNI, no para otros tipos
+    const tipoSeleccionado = this.getTipoDocumentoSeleccionado();
+    if (tipoSeleccionado !== 'ruc' && tipoSeleccionado !== 'dni') {
+      return; // No consultar para otros tipos de documento
     }
-    // Para otros tipos (Carnet de Extranjería, Pasaporte, etc.), no consultar API
-    // Solo se valida el formato arriba
-
-    // Si el documento es válido y es RUC o DNI, consultar API
-    if (tipo && rucControl.valid) {
-      // Guardar el documento consultado para evitar duplicados
-      this.ultimoDocumentoConsultado = documentoLimpio;
-      this.consultarClientePorDocumento(documentoLimpio, tipo);
+    
+    // Verificar que no sea el mismo documento que ya consultamos
+    if (this.ultimoDocumentoConsultado === documentoLimpio) {
+      return;
     }
+    
+    // Consultar el documento usando el tipo seleccionado (solo RUC o DNI)
+    this.ultimoDocumentoConsultado = documentoLimpio;
+    this.consultarClientePorDocumento(documentoLimpio, tipoSeleccionado === 'ruc' ? 'ruc' : 'dni');
   }
 
   consultarClientePorDocumento(documento: string, tipo: 'ruc' | 'dni'): void {
@@ -554,25 +431,60 @@ export class AddClienteComponent implements OnInit, OnDestroy {
 
         this.spinner.hide('consultar_cliente');
         
-        const tipoDoc = tipo === 'ruc' ? 'RUC' : 'DNI';
+        // Obtener el tipo de documento seleccionado para mostrar el nombre correcto
+        const tipoDocActual = this.getTipoDocumentoActual();
+        const nombreTipoDoc = tipoDocActual?.descripcion || (tipo === 'ruc' ? 'RUC' : 'DNI');
         
         if (resp.existeEnBD) {
-          // Construir el mensaje con los datos del cliente
-          let mensaje = `El ${tipoDoc} ya es cliente`;
+          // Construir el mensaje con los datos del cliente según el formato solicitado
+          let mensaje = '';
           if (resp.datosApi) {
             const datos = resp.datosApi;
-            mensaje += '\n\n';
-            mensaje += `Nombre: ${datos.razonSocial || datos.nombre || 'N/A'}\n`;
-            mensaje += `Dirección: ${datos.direccion || 'N/A'}\n`;
-            mensaje += `Teléfono: ${datos.telefono || 'N/A'}\n`;
-            mensaje += `Contacto: ${datos.contacto || 'N/A'}`;
-          } else if (resp.mensaje) {
-            mensaje = resp.mensaje;
+            
+            // Función para capitalizar primera letra de cada palabra
+            const capitalizar = (texto: string | undefined | null): string => {
+              if (!texto || texto === 'N/A') return 'N/A';
+              return texto
+                .split(' ')
+                .map(palabra => palabra.charAt(0).toUpperCase() + palabra.slice(1).toLowerCase())
+                .join(' ');
+            };
+            
+            mensaje += `<div style="text-align: left; line-height: 1.8; font-size: 14px;">`;
+            mensaje += `<div style="margin-bottom: 8px;"><strong>Razón Social:</strong> ${capitalizar(datos.razonSocial || datos.nombre || 'N/A')}</div>`;
+            mensaje += `<div style="margin-bottom: 8px;">`;
+            const direccionTexto = capitalizar(datos.direccion || 'N/A');
+            if (datos.distrito || datos.provincia || datos.departamento) {
+              const ubigeo = [datos.distrito, datos.provincia, datos.departamento].filter(Boolean).join(' - ');
+              mensaje += `<div><strong>Dirección:</strong> ${direccionTexto}</div>`;
+              mensaje += `<div style="padding-left: 110px; margin-top: 4px; word-break: break-word;">${capitalizar(ubigeo)}</div>`;
+            } else {
+              mensaje += `<div><strong>Dirección:</strong> ${direccionTexto}</div>`;
+            }
+            mensaje += `</div>`;
+            mensaje += `<div style="margin-bottom: 8px;"><strong>Teléfono:</strong> ${capitalizar(datos.telefono || 'N/A')}</div>`;
+            mensaje += `<div><strong>Contacto:</strong> ${capitalizar(datos.contacto || 'N/A')}</div>`;
+            mensaje += `</div>`;
+          } else {
+            // Si no hay datosApi, intentar usar el mensaje del backend
+            mensaje = resp.mensaje || 'No se encontraron datos adicionales del cliente.';
           }
           
+          // Deshabilitar todos los campos excepto tipoDocumento y ruc (que ya está validado)
+          this.formCliente.get('razon')?.disable();
+          this.formCliente.get('direccion')?.disable();
+          this.formCliente.get('telefono')?.disable();
+          this.formCliente.get('ciudad')?.disable();
+          this.formCliente.get('contacto')?.disable();
+          this.formCliente.get('telefonoContacto')?.disable();
+          this.formCliente.get('correo')?.disable();
+          this.formCliente.get('ubigeo')?.disable();
+          this.formCliente.get('condicion')?.disable();
+          this.formCliente.get('diasCredito')?.disable();
+          
           Swal.fire({
-            title: `${tipoDoc} ya es cliente`,
-            text: mensaje,
+            title: `El ${nombreTipoDoc} ya es cliente`,
+            html: mensaje,
             icon: 'warning',
             confirmButtonColor: '#17a2b8',
             confirmButtonText: 'Ok',
@@ -588,8 +500,8 @@ export class AddClienteComponent implements OnInit, OnDestroy {
           }
 
           Swal.fire({
-            title: `${tipoDoc} no encontrado`,
-            text: `El ${tipoDoc} no existe en la base de datos local. Se consultará la información desde el API externo.`,
+            title: `${nombreTipoDoc} no encontrado`,
+            text: `El ${nombreTipoDoc} no existe en la base de datos local. Se consultará la información desde el API externo.`,
             icon: 'info',
             confirmButtonColor: '#17a2b8',
             confirmButtonText: 'Continuar',
@@ -636,16 +548,15 @@ export class AddClienteComponent implements OnInit, OnDestroy {
     // Verificar que el documento sea válido antes de procesar los datos del API
     const documentoControl = this.formCliente.get('ruc');
     if (!documentoControl?.valid || !documentoControl.value) {
-      console.log('Documento no válido, no se procesarán los datos del API');
       return;
     }
 
     const documentoLimpio = documentoControl.value.toString().replace(/\D/g, '');
-    const esRuc = documentoLimpio.length === 11;
-    const esDni = documentoLimpio.length === 8;
+    // Validar según el tipo pasado como parámetro (no inferir por longitud)
+    const longitudEsperada = tipo === 'ruc' ? 11 : 8;
+    const patron = tipo === 'ruc' ? /^\d{11}$/ : /^\d{8}$/;
     
-    if (!esRuc && !esDni) {
-      console.log('Documento no válido, no se procesarán los datos del API');
+    if (documentoLimpio.length !== longitudEsperada || !patron.test(documentoLimpio)) {
       return;
     }
 
@@ -739,20 +650,28 @@ export class AddClienteComponent implements OnInit, OnDestroy {
                     ubigeoEncontrado = ubigeos[0];
                   }
                   
-                  // Solo seleccionar ubigeo si el documento es válido
-                  const documentoControl = this.formCliente.get('ruc');
-                  const documentoLimpio = documentoControl?.value?.toString().replace(/\D/g, '') || '';
-                  const esValido = (documentoLimpio.length === 11 && /^\d{11}$/.test(documentoLimpio)) ||
-                                   (documentoLimpio.length === 8 && /^\d{8}$/.test(documentoLimpio));
-                  
-                  if (documentoControl?.valid && esValido) {
-                    this.seleccionarUbigeo(ubigeoEncontrado);
+                  // Solo seleccionar ubigeo si el documento es válido (solo para RUC y DNI)
+                  if (tipo === 'ruc' || tipo === 'dni') {
+                    const documentoControl = this.formCliente.get('ruc');
+                    const documentoLimpio = documentoControl?.value?.toString().replace(/\D/g, '') || '';
+                    const longitudEsperada = tipo === 'ruc' ? 11 : 8;
+                    const patron = tipo === 'ruc' ? /^\d{11}$/ : /^\d{8}$/;
+                    const esValido = documentoLimpio.length === longitudEsperada && patron.test(documentoLimpio);
+                    
+                    if (documentoControl?.valid && esValido) {
+                      this.seleccionarUbigeo(ubigeoEncontrado);
+                    }
+                  } else {
+                    // Para otros tipos, solo validar que el control sea válido
+                    const documentoControl = this.formCliente.get('ruc');
+                    if (documentoControl?.valid) {
+                      this.seleccionarUbigeo(ubigeoEncontrado);
+                    }
                   }
                 }
               },
               error: () => {
                 // Si falla la búsqueda de ubigeo, no es crítico
-                console.log('No se pudo buscar el ubigeo automáticamente');
               }
             });
           } else if (resp.datosApi.ubigeo) {
@@ -775,12 +694,11 @@ export class AddClienteComponent implements OnInit, OnDestroy {
           // No se pudieron obtener datos del API
           Swal.fire({
             title: 'Sin datos disponibles',
-            text: 'No se pudieron obtener datos del API externo para este RUC. Por favor, complete los datos manualmente.',
+            text: 'No se pudieron obtener datos del API externo para este documento. Por favor, complete los datos manualmente.',
             icon: 'warning',
             confirmButtonColor: '#17a2b8',
             confirmButtonText: 'Ok',
           });
-          console.log('No se pudieron obtener datos del API para el documento:', documento);
         }
   }
 
@@ -852,8 +770,6 @@ export class AddClienteComponent implements OnInit, OnDestroy {
         const rucTipo = resp.filter((it) => it.descripcion === 'RUC')?.[0];
         if (rucTipo) {
           this.formCliente.controls['tipoDocumento'].setValue(rucTipo.tipo, { emitEvent: true });
-          // Actualizar validación después de establecer el tipo por defecto
-          this.actualizarValidacionDocumento(rucTipo.tipo);
         }
         this.spinner.hide('tipos_doc');
       },
@@ -889,6 +805,56 @@ export class AddClienteComponent implements OnInit, OnDestroy {
   }
 
   registrarCliente(): void {
+    // Verificar si algún campo está deshabilitado (cliente ya existe)
+    const razonControl = this.formCliente.get('razon');
+    if (razonControl && razonControl.disabled) {
+      Swal.fire({
+        title: 'Cliente ya existe',
+        text: 'Este documento ya existe como cliente en la base de datos. No se puede guardar.',
+        icon: 'warning',
+        confirmButtonColor: '#17a2b8',
+        confirmButtonText: 'Ok',
+      });
+      return;
+    }
+    
+    // Limpiar y validar el campo RUC antes de validar el formulario
+    const rucControl = this.formCliente.get('ruc');
+    const tipoDocControl = this.formCliente.get('tipoDocumento');
+    
+    if (rucControl && rucControl.value && tipoDocControl && tipoDocControl.value) {
+      const config = this.getConfiguracionDocumento();
+      const valorActual = rucControl.value.toString();
+      
+      let valorLimpio = valorActual;
+      if (config.requiereValidacionExacta) {
+        valorLimpio = valorActual.replace(/\D/g, '');
+      } else {
+        valorLimpio = valorActual.trim();
+      }
+      
+      if (config.maxLength > 0 && valorLimpio.length > config.maxLength) {
+        valorLimpio = valorLimpio.substring(0, config.maxLength);
+      }
+      
+      if (valorLimpio !== valorActual) {
+        rucControl.setValue(valorLimpio, { emitEvent: false });
+      }
+      
+      // Validar según la configuración
+      if (config.requiereValidacionExacta && config.longitudEsperada !== null) {
+        if (valorLimpio && valorLimpio.length !== config.longitudEsperada) {
+          rucControl.setErrors({ pattern: true });
+          rucControl.markAsTouched();
+        }
+      } else if (valorLimpio && valorLimpio.length < 1) {
+        rucControl.setErrors({ pattern: true });
+        rucControl.markAsTouched();
+      }
+      
+      rucControl.updateValueAndValidity();
+    }
+    
     if (this.formCliente.invalid) {
       return Object.values(this.formCliente.controls).forEach((control) => {
         if (control instanceof FormGroup) {
@@ -906,16 +872,15 @@ export class AddClienteComponent implements OnInit, OnDestroy {
   saveCliente(): void {
     this.spinner.show();
 
-    // Limpiar el RUC: eliminar espacios y caracteres no numéricos, tomar solo los primeros 11 dígitos
-    const rucRaw = this.formCliente.get('ruc')?.value || '';
-    const rucLimpio = rucRaw.toString().replace(/\D/g, '').substring(0, 11);
-
-    // Validar que el RUC tenga exactamente 11 dígitos
-    if (rucLimpio.length !== 11) {
+    // Limpiar y validar el documento según el tipo seleccionado
+    const rucControl = this.formCliente.get('ruc');
+    const tipoDocControl = this.formCliente.get('tipoDocumento');
+    
+    if (!tipoDocControl || !tipoDocControl.value) {
       this.spinner.hide();
       Swal.fire({
         title: 'Error de validación',
-        text: 'El RUC debe tener exactamente 11 dígitos numéricos.',
+        text: 'Debe seleccionar un tipo de documento.',
         icon: 'error',
         confirmButtonColor: '#17a2b8',
         confirmButtonText: 'Ok',
@@ -923,9 +888,62 @@ export class AddClienteComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const config = this.getConfiguracionDocumento();
+    const rucRaw = rucControl?.value || '';
+    
+    let documentoLimpio = rucRaw.toString();
+    if (config.requiereValidacionExacta) {
+      documentoLimpio = documentoLimpio.replace(/\D/g, '');
+    } else {
+      documentoLimpio = documentoLimpio.trim();
+    }
+    
+    if (config.maxLength > 0 && documentoLimpio.length > config.maxLength) {
+      documentoLimpio = documentoLimpio.substring(0, config.maxLength);
+    }
+
+    // Validar según el tipo de documento
+    if (config.requiereValidacionExacta && config.longitudEsperada !== null) {
+      if (!documentoLimpio || documentoLimpio.length !== config.longitudEsperada) {
+        this.spinner.hide();
+        if (rucControl) {
+          rucControl.setErrors({ pattern: true });
+          rucControl.markAsTouched();
+        }
+        const tipoDoc = this.getTipoDocumentoActual();
+        const nombreTipo = tipoDoc?.descripcion || 'documento';
+        const mensajeError = `El número de ${nombreTipo} debe tener exactamente ${config.longitudEsperada} ${config.requiereValidacionExacta ? 'dígitos' : 'caracteres'}.`;
+        Swal.fire({
+          title: 'Error de validación',
+          text: mensajeError,
+          icon: 'error',
+          confirmButtonColor: '#17a2b8',
+          confirmButtonText: 'Ok',
+        });
+        return;
+      }
+    } else {
+      // Para otros tipos, solo validar que tenga al menos 1 carácter
+      if (!documentoLimpio || documentoLimpio.length < 1) {
+        this.spinner.hide();
+        if (rucControl) {
+          rucControl.setErrors({ pattern: true });
+          rucControl.markAsTouched();
+        }
+        Swal.fire({
+          title: 'Error de validación',
+          text: 'El número de documento es requerido.',
+          icon: 'error',
+          confirmButtonColor: '#17a2b8',
+          confirmButtonText: 'Ok',
+        });
+        return;
+      }
+    }
+
     const data: NuevoCliente = {
       ...this.formCliente.value,
-      ruc: rucLimpio, // Usar el RUC limpio
+      ruc: documentoLimpio, // Usar el documento limpio
       ubigeo: this.ubigeo()?.ubigeo,
     };
     this.pedidosService.crearCliente(data).subscribe({

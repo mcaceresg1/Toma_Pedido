@@ -6,6 +6,26 @@
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <script>
+      // Polyfill temprano para stream (antes de que Vite lo externalice)
+      (function() {
+        function StreamStub() {}
+        const streamPolyfill = {
+          Readable: StreamStub,
+          Writable: StreamStub,
+          Duplex: StreamStub,
+          Transform: StreamStub,
+          PassThrough: StreamStub,
+          Stream: StreamStub,
+        };
+        if (typeof window !== 'undefined') {
+          window.stream = streamPolyfill;
+        }
+        if (typeof globalThis !== 'undefined') {
+          globalThis.stream = streamPolyfill;
+        }
+      })();
+    </script>
     <link
       href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap"
       rel="stylesheet"
