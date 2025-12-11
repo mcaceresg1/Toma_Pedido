@@ -140,7 +140,7 @@ namespace ApiRoy.Controllers
                 // Errores de SQL Server
                 _logger.LogError(sqlEx, "Error de base de datos en login para usuario: {Usuario}. Error SQL: {Error}, Number: {Number}, State: {State}", 
                     ecLogin?.Usuario ?? "N/A", sqlEx.Message, sqlEx.Number, sqlEx.State);
-                _logger.LogError("Server: {Server}, Database: {Database}", sqlEx.Server ?? "N/A", sqlEx.Database ?? "N/A");
+                _logger.LogError("Server: {Server}, Procedure: {Procedure}", sqlEx.Server ?? "N/A", sqlEx.Procedure ?? "N/A");
                 // Relanzar para que el middleware lo maneje como InternalServerError
                 throw;
             }

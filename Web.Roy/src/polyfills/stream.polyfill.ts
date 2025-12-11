@@ -34,8 +34,9 @@ if (typeof globalThis !== 'undefined') {
 
 // Intentar definir en el objeto global si existe (para Node.js environments simulados)
 try {
-  if (typeof global !== 'undefined') {
-    (global as any).stream = streamPolyfill;
+  const g = typeof globalThis !== 'undefined' ? (globalThis as any) : {};
+  if (g.global) {
+    g.global.stream = streamPolyfill;
   }
 } catch (e) {
   // Ignorar si global no está disponible
