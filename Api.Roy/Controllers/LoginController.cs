@@ -4,6 +4,7 @@ namespace ApiRoy.Controllers
     using ApiRoy.Models;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.IdentityModel.Tokens;
+    using Microsoft.Data.SqlClient;
     using System.IdentityModel.Tokens.Jwt;
     using System.Security.Claims;
     using System.Text;
@@ -121,12 +122,42 @@ namespace ApiRoy.Controllers
                     message = token,
                     user = resultLogin
                 });
-            } catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error en login para usuario: {Usuario}", ecLogin?.Usuario);
-                throw new Exception(ex.Message, ex);
             }
-            
+            catch (InvalidOperationException ex)
+            {
+                // Errores de configuración (JWT, connection strings, etc.)
+                _logger.LogError(ex, "Error de configuración en login para usuario: {Usuario}. Error: {Error}", ecLogin?.Usuario ?? "N/A", ex.Message);
+                _logger.LogError("StackTrace: {StackTrace}", ex.StackTrace ?? "N/A");
+                if (ex.InnerException != null)
+                {
+                    _logger.LogError("InnerException: {InnerError}", ex.InnerException.Message);
+                }
+                // Relanzar para que el middleware lo maneje como BadRequest (InvalidOperationException -> 400)
+                throw;
+            }
+            catch (SqlException sqlEx)
+            {
+                // Errores de SQL Server
+                _logger.LogError(sqlEx, "Error de base de datos en login para usuario: {Usuario}. Error SQL: {Error}, Number: {Number}, State: {State}", 
+                    ecLogin?.Usuario ?? "N/A", sqlEx.Message, sqlEx.Number, sqlEx.State);
+                _logger.LogError("Server: {Server}, Database: {Database}", sqlEx.Server ?? "N/A", sqlEx.Database ?? "N/A");
+                // Relanzar para que el middleware lo maneje como InternalServerError
+                throw;
+            }
+            catch (Exception ex)
+            {
+                // Cualquier otro error
+                _logger.LogError(ex, "Error inesperado en login para usuario: {Usuario}. Tipo: {Type}, Mensaje: {Error}", 
+                    ecLogin?.Usuario ?? "N/A", ex.GetType().Name, ex.Message);
+                _logger.LogError("StackTrace: {StackTrace}", ex.StackTrace ?? "N/A");
+                if (ex.InnerException != null)
+                {
+                    _logger.LogError("InnerException - Tipo: {Type}, Mensaje: {Error}", 
+                        ex.InnerException.GetType().Name, ex.InnerException.Message);
+                }
+                // Relanzar para que el middleware lo maneje
+                throw;
+            }
         }
 
         private string GenerateToken(EcLogin p)
