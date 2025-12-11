@@ -9,6 +9,8 @@
     using System.Data;
     using System.Globalization;
     using System.Threading.Tasks;
+    using System.Net.Http;
+    using System.Text.RegularExpressions;
 
     public class DbPedido : IDbPedido
     {
@@ -16,12 +18,14 @@
         private static IConfiguration _StaticConfig { get; set; } = null!;
         private readonly IWebHostEnvironment _environment;
         private readonly ILogger<DbPedido> _logger;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        public DbPedido(IConfiguration config, IWebHostEnvironment environment, ILogger<DbPedido> logger)
+        public DbPedido(IConfiguration config, IWebHostEnvironment environment, ILogger<DbPedido> logger, IHttpClientFactory httpClientFactory)
         {
             _StaticConfig = config;
             this._environment = environment;
             this._logger = logger;
+            _httpClientFactory = httpClientFactory;
             if (this._environment.IsDevelopment())
             {
                 var connString = _StaticConfig.GetConnectionString("DevConnStringDbData") ?? throw new InvalidOperationException("DevConnStringDbData no está configurado");
@@ -926,6 +930,470 @@
             }
         }
 
+        public async Task<bool> ValidarRucExiste(string ruc)
+        {
+            try
+            {
+                // Extraer dinámicamente el nombre de la base de datos desde la connection string
+                string connString;
+                if (_environment.IsDevelopment())
+                {
+                    connString = _StaticConfig.GetConnectionString("DevConnStringDbData") ?? throw new InvalidOperationException("DevConnStringDbData no está configurado");
+                }
+                else
+                {
+                    connString = _StaticConfig.GetConnectionString("OrgConnStringDbData") ?? throw new InvalidOperationException("OrgConnStringDbData no está configurado");
+                }
 
+                string databaseName = ExtractDatabaseName(connString);
+                if (string.IsNullOrEmpty(databaseName))
+                {
+                    throw new InvalidOperationException("No se pudo extraer el nombre de la base de datos desde la connection string");
+                }
+
+                _logger.LogDebug("ValidarRucExiste - BD: {Database}", databaseName);
+
+                // Usar la misma conexión que se usa en otros métodos
+                using (var connection = dbData.DbConn.conn)
+                {
+                    await connection.OpenAsync();
+                    
+                    // Consultar solo en la base de datos actual (no generar automáticamente una segunda BD)
+                    string query = $@"
+                        SELECT COUNT(1) as Existe 
+                        FROM {databaseName}.DBO.CUE001 
+                        WHERE RUC = @RUC";
+
+                    using (var command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@RUC", ruc);
+                        var result = await command.ExecuteScalarAsync();
+                        var existe = Convert.ToInt32(result) > 0;
+                        _logger.LogInformation("Validación RUC {Ruc} en BD {Database}: {Existe}", ruc, databaseName, existe ? "EXISTE" : "NO EXISTE");
+                        return existe;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al validar si el RUC existe: {Ruc}", ruc);
+                throw new Exception($"Error al validar RUC: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<EcClienteApiResponse?> ObtenerDatosClientePorRuc(string ruc)
+        {
+            try
+            {
+                string connString;
+                if (_environment.IsDevelopment())
+                {
+                    connString = _StaticConfig.GetConnectionString("DevConnStringDbData") ?? throw new InvalidOperationException("DevConnStringDbData no está configurado");
+                }
+                else
+                {
+                    connString = _StaticConfig.GetConnectionString("OrgConnStringDbData") ?? throw new InvalidOperationException("OrgConnStringDbData no está configurado");
+                }
+
+                string databaseName = ExtractDatabaseName(connString);
+                if (string.IsNullOrEmpty(databaseName))
+                {
+                    throw new InvalidOperationException("No se pudo extraer el nombre de la base de datos desde la connection string");
+                }
+
+                using (var connection = dbData.DbConn.conn)
+                {
+                    await connection.OpenAsync();
+                    
+                    string query = $@"
+                        SELECT TOP 1 
+                            RAZON, 
+                            DIRECCION, 
+                            CIUDAD,
+                            UBIGEO,
+                            TELEFONO,
+                            CONTACTO
+                        FROM {databaseName}.DBO.CUE001 
+                        WHERE RUC = @RUC";
+
+                    using (var command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@RUC", ruc);
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            if (await reader.ReadAsync())
+                            {
+                                return new EcClienteApiResponse
+                                {
+                                    RazonSocial = reader["RAZON"]?.ToString(),
+                                    Direccion = reader["DIRECCION"]?.ToString(),
+                                    Distrito = reader["CIUDAD"]?.ToString(),
+                                    Ubigeo = reader["UBIGEO"]?.ToString(),
+                                    Telefono = reader["TELEFONO"]?.ToString(),
+                                    Contacto = reader["CONTACTO"]?.ToString()
+                                };
+                            }
+                        }
+                    }
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener datos del cliente por RUC: {Ruc}", ruc);
+                return null;
+            }
+        }
+
+        public async Task<EcClienteApiResponse?> ObtenerDatosClientePorDni(string dni)
+        {
+            try
+            {
+                string connString;
+                if (_environment.IsDevelopment())
+                {
+                    connString = _StaticConfig.GetConnectionString("DevConnStringDbData") ?? throw new InvalidOperationException("DevConnStringDbData no está configurado");
+                }
+                else
+                {
+                    connString = _StaticConfig.GetConnectionString("OrgConnStringDbData") ?? throw new InvalidOperationException("OrgConnStringDbData no está configurado");
+                }
+
+                string databaseName = ExtractDatabaseName(connString);
+                if (string.IsNullOrEmpty(databaseName))
+                {
+                    throw new InvalidOperationException("No se pudo extraer el nombre de la base de datos desde la connection string");
+                }
+
+                using (var connection = dbData.DbConn.conn)
+                {
+                    await connection.OpenAsync();
+                    
+                    string query = $@"
+                        SELECT TOP 1 
+                            RAZON, 
+                            DIRECCION, 
+                            CIUDAD,
+                            UBIGEO,
+                            TELEFONO,
+                            CONTACTO
+                        FROM {databaseName}.DBO.CUE001 
+                        WHERE RUC = @DNI";
+
+                    using (var command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@DNI", dni);
+                        using (var reader = await command.ExecuteReaderAsync())
+                        {
+                            if (await reader.ReadAsync())
+                            {
+                                return new EcClienteApiResponse
+                                {
+                                    Nombre = reader["RAZON"]?.ToString(),
+                                    Direccion = reader["DIRECCION"]?.ToString(),
+                                    Distrito = reader["CIUDAD"]?.ToString(),
+                                    Ubigeo = reader["UBIGEO"]?.ToString(),
+                                    Telefono = reader["TELEFONO"]?.ToString(),
+                                    Contacto = reader["CONTACTO"]?.ToString()
+                                };
+                            }
+                        }
+                    }
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al obtener datos del cliente por DNI: {Dni}", dni);
+                return null;
+            }
+        }
+
+        private string ExtractDatabaseName(string connectionString)
+        {
+            if (string.IsNullOrEmpty(connectionString))
+                return string.Empty;
+            
+            // Buscar "Initial Catalog=" o "Database=" (ambos formatos)
+            var match = Regex.Match(
+                connectionString, 
+                @"(?:initial\s+catalog|database)\s*=\s*([^;]+)", 
+                RegexOptions.IgnoreCase
+            );
+            
+            return match.Success ? match.Groups[1].Value.Trim() : string.Empty;
+        }
+
+
+        public async Task<EcClienteApiResponse?> ConsultarClienteApi(string ruc)
+        {
+            try
+            {
+                // Obtener token desde variable de entorno o configuración (igual que Trace ERP)
+                var token = Environment.GetEnvironmentVariable("APIPERU_TOKEN") 
+                    ?? _StaticConfig["SunatReniec:ApiToken"] 
+                    ?? _StaticConfig["ExternalApi:ClienteApi:Token"]
+                    ?? "";
+
+                if (string.IsNullOrEmpty(token) || token == "CONFIGURAR_TOKEN_API")
+                {
+                    _logger.LogWarning("APIPERU_TOKEN no está configurado. Las consultas a SUNAT pueden fallar.");
+                    _logger.LogWarning("Configura el token en una variable de entorno APIPERU_TOKEN o en appsettings.json bajo 'SunatReniec:ApiToken'");
+                    return null;
+                }
+
+                // Extraer solo dígitos del RUC
+                var rucLimpio = new string(ruc.Where(char.IsDigit).ToArray());
+                
+                if (string.IsNullOrEmpty(rucLimpio) || rucLimpio.Length != 11)
+                {
+                    _logger.LogWarning("RUC inválido: {Ruc}. Debe tener 11 dígitos.", ruc);
+                    return null;
+                }
+
+                var httpClient = _httpClientFactory.CreateClient();
+                httpClient.Timeout = TimeSpan.FromSeconds(30);
+                
+                // Configurar base URL de la API (apiperu.dev)
+                httpClient.BaseAddress = new Uri("https://apiperu.dev/api/");
+                httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
+                httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+
+                // Preparar el body con el RUC en formato JSON (POST según apiperu.dev)
+                var requestBody = new { ruc = rucLimpio };
+                var jsonContent = System.Text.Json.JsonSerializer.Serialize(requestBody);
+                var requestContent = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
+
+                _logger.LogInformation("Consultando API de SUNAT para RUC: {Ruc}", rucLimpio);
+
+                var response = await httpClient.PostAsync("ruc", requestContent);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogWarning("Error al consultar RUC {Ruc}: {StatusCode}. Respuesta: {Content}", rucLimpio, response.StatusCode, errorContent);
+                    return null;
+                }
+
+                var responseContent = await response.Content.ReadAsStringAsync();
+                
+                if (string.IsNullOrWhiteSpace(responseContent))
+                {
+                    _logger.LogWarning("La respuesta de SUNAT está vacía para RUC: {Ruc}", rucLimpio);
+                    return null;
+                }
+
+                _logger.LogDebug("Respuesta del API: {Response}", responseContent);
+
+                // Parsear respuesta de apiperu.dev (igual que Trace ERP)
+                var jsonDoc = System.Text.Json.JsonDocument.Parse(responseContent);
+                var root = jsonDoc.RootElement;
+
+                var success = root.TryGetProperty("success", out var successProp) 
+                    ? successProp.GetBoolean() 
+                    : false;
+
+                if (!success)
+                {
+                    var message = root.TryGetProperty("message", out var msg) ? msg.GetString() : "Error desconocido";
+                    _logger.LogWarning("API retornó success=false para RUC {Ruc}: {Message}", rucLimpio, message);
+                    return null;
+                }
+
+                // Extraer datos del objeto "data"
+                if (!root.TryGetProperty("data", out var data))
+                {
+                    _logger.LogWarning("La respuesta del API no contiene 'data' para RUC: {Ruc}", rucLimpio);
+                    return null;
+                }
+
+                var clienteApi = new EcClienteApiResponse
+                {
+                    RazonSocial = data.TryGetProperty("nombre_o_razon_social", out var razon) ? razon.GetString() : null,
+                    Direccion = data.TryGetProperty("direccion_completa", out var dir) ? dir.GetString() : null,
+                    Distrito = data.TryGetProperty("distrito", out var dist) ? dist.GetString() : null,
+                    Provincia = data.TryGetProperty("provincia", out var prov) ? prov.GetString() : null,
+                    Departamento = data.TryGetProperty("departamento", out var dep) ? dep.GetString() : null,
+                    Estado = data.TryGetProperty("estado", out var est) ? est.GetString() : null,
+                    Condicion = data.TryGetProperty("condicion", out var cond) ? cond.GetString() : null,
+                };
+
+                _logger.LogInformation("Datos del cliente obtenidos del API para RUC: {Ruc}", rucLimpio);
+                return clienteApi;
+            }
+            catch (System.Net.Http.HttpRequestException httpEx)
+            {
+                _logger.LogError(httpEx, "Error de conexión al consultar RUC {Ruc}", ruc);
+                return null;
+            }
+            catch (TaskCanceledException timeoutEx)
+            {
+                _logger.LogError(timeoutEx, "Timeout al consultar RUC {Ruc}", ruc);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al consultar API de cliente para RUC: {Ruc}", ruc);
+                return null;
+            }
+        }
+
+        public async Task<bool> ValidarDniExiste(string dni)
+        {
+            try
+            {
+                // Extraer dinámicamente el nombre de la base de datos desde la connection string
+                string connString;
+                if (_environment.IsDevelopment())
+                {
+                    connString = _StaticConfig.GetConnectionString("DevConnStringDbData") ?? throw new InvalidOperationException("DevConnStringDbData no está configurado");
+                }
+                else
+                {
+                    connString = _StaticConfig.GetConnectionString("OrgConnStringDbData") ?? throw new InvalidOperationException("OrgConnStringDbData no está configurado");
+                }
+
+                string databaseName = ExtractDatabaseName(connString);
+                if (string.IsNullOrEmpty(databaseName))
+                {
+                    throw new InvalidOperationException("No se pudo extraer el nombre de la base de datos desde la connection string");
+                }
+
+                _logger.LogDebug("ValidarDniExiste - BD: {Database}", databaseName);
+
+                // Usar la misma conexión que se usa en otros métodos
+                using (var connection = dbData.DbConn.conn)
+                {
+                    await connection.OpenAsync();
+                    
+                    // Consultar solo en la base de datos actual
+                    string query = $@"
+                        SELECT COUNT(1) as Existe 
+                        FROM {databaseName}.DBO.CUE001 
+                        WHERE RUC = @DNI";
+
+                    using (var command = new SqlCommand(query, connection))
+                    {
+                        command.Parameters.AddWithValue("@DNI", dni);
+                        var result = await command.ExecuteScalarAsync();
+                        var existe = Convert.ToInt32(result) > 0;
+                        _logger.LogInformation("Validación DNI {Dni} en BD {Database}: {Existe}", dni, databaseName, existe ? "EXISTE" : "NO EXISTE");
+                        return existe;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al validar si el DNI existe: {Dni}", dni);
+                throw new Exception($"Error al validar DNI: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<EcClienteApiResponse?> ConsultarClienteApiPorDni(string dni)
+        {
+            try
+            {
+                // Obtener token desde variable de entorno o configuración (igual que Trace ERP)
+                var token = Environment.GetEnvironmentVariable("APIPERU_TOKEN") 
+                    ?? _StaticConfig["SunatReniec:ApiToken"] 
+                    ?? _StaticConfig["ExternalApi:ClienteApi:Token"]
+                    ?? "";
+
+                if (string.IsNullOrEmpty(token) || token == "CONFIGURAR_TOKEN_API")
+                {
+                    _logger.LogWarning("APIPERU_TOKEN no está configurado. Las consultas a RENIEC pueden fallar.");
+                    _logger.LogWarning("Configura el token en una variable de entorno APIPERU_TOKEN o en appsettings.json bajo 'SunatReniec:ApiToken'");
+                    return null;
+                }
+
+                // Extraer solo dígitos del DNI
+                var dniLimpio = new string(dni.Where(char.IsDigit).ToArray());
+                
+                if (string.IsNullOrEmpty(dniLimpio) || dniLimpio.Length != 8)
+                {
+                    _logger.LogWarning("DNI inválido: {Dni}. Debe tener 8 dígitos.", dni);
+                    return null;
+                }
+
+                var httpClient = _httpClientFactory.CreateClient();
+                httpClient.Timeout = TimeSpan.FromSeconds(30);
+                
+                // Configurar base URL de la API (apiperu.dev)
+                httpClient.BaseAddress = new Uri("https://apiperu.dev/api/");
+                httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
+                httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {token}");
+
+                _logger.LogInformation("Consultando API de RENIEC para DNI: {Dni}", dniLimpio);
+
+                // Para DNI se usa GET según Trace_ERP
+                var response = await httpClient.GetAsync($"dni/{dniLimpio}");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogWarning("Error al consultar DNI {Dni}: {StatusCode}. Respuesta: {Content}", dniLimpio, response.StatusCode, errorContent);
+                    return null;
+                }
+
+                var responseContent = await response.Content.ReadAsStringAsync();
+                
+                if (string.IsNullOrWhiteSpace(responseContent))
+                {
+                    _logger.LogWarning("La respuesta de RENIEC está vacía para DNI: {Dni}", dniLimpio);
+                    return null;
+                }
+
+                _logger.LogDebug("Respuesta del API: {Response}", responseContent);
+
+                // Parsear respuesta de apiperu.dev (igual que Trace ERP)
+                var jsonDoc = System.Text.Json.JsonDocument.Parse(responseContent);
+                var root = jsonDoc.RootElement;
+
+                var success = root.TryGetProperty("success", out var successProp) 
+                    ? successProp.GetBoolean() 
+                    : false;
+
+                if (!success)
+                {
+                    var message = root.TryGetProperty("message", out var msg) ? msg.GetString() : "Error desconocido";
+                    _logger.LogWarning("API retornó success=false para DNI {Dni}: {Message}", dniLimpio, message);
+                    return null;
+                }
+
+                // Extraer datos del objeto "data"
+                if (!root.TryGetProperty("data", out var data))
+                {
+                    _logger.LogWarning("La respuesta del API no contiene 'data' para DNI: {Dni}", dniLimpio);
+                    return null;
+                }
+
+                var clienteApi = new EcClienteApiResponse
+                {
+                    Nombre = data.TryGetProperty("nombre_completo", out var nombre) ? nombre.GetString() : null,
+                    Direccion = data.TryGetProperty("direccion_completa", out var dir) ? dir.GetString() : null,
+                    Distrito = data.TryGetProperty("distrito", out var dist) ? dist.GetString() : null,
+                    Provincia = data.TryGetProperty("provincia", out var prov) ? prov.GetString() : null,
+                    Departamento = data.TryGetProperty("departamento", out var dep) ? dep.GetString() : null,
+                };
+
+                _logger.LogInformation("Datos del cliente obtenidos del API para DNI: {Dni}", dniLimpio);
+                return clienteApi;
+            }
+            catch (System.Net.Http.HttpRequestException httpEx)
+            {
+                _logger.LogError(httpEx, "Error de conexión al consultar DNI {Dni}", dni);
+                return null;
+            }
+            catch (TaskCanceledException timeoutEx)
+            {
+                _logger.LogError(timeoutEx, "Timeout al consultar DNI {Dni}", dni);
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al consultar API de cliente para DNI: {Dni}", dni);
+                return null;
+            }
+        }
     }
 }

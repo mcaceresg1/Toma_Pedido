@@ -8,4 +8,5 @@ export interface Ubigeo {
 
 export interface ModalUbigeoData {
   seleccionarUbigeo: (ubigeo: Ubigeo) => void;
+  filtroInicial?: string; // Filtro inicial para la búsqueda de ubigeo
 }

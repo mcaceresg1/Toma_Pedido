@@ -339,5 +339,81 @@
             }
         }
 
+        public async Task<EcConsultaClienteResponse> ConsultarClientePorRuc(string ruc)
+        {
+            try
+            {
+                // Primero validar si el RUC existe en la BD
+                var existeEnBD = await _dbPedido.ValidarRucExiste(ruc);
+                
+                if (existeEnBD)
+                {
+                    // Obtener los datos del cliente existente
+                    var datosCliente = await _dbPedido.ObtenerDatosClientePorRuc(ruc);
+                    
+                    return new EcConsultaClienteResponse
+                    {
+                        ExisteEnBD = true,
+                        DatosApi = datosCliente,
+                        Mensaje = datosCliente != null 
+                            ? $"El RUC ya es cliente\n\nNombre: {datosCliente.RazonSocial ?? "N/A"}\nDirección: {datosCliente.Direccion ?? "N/A"}\nTeléfono: {datosCliente.Telefono ?? "N/A"}\nContacto: {datosCliente.Contacto ?? "N/A"}"
+                            : "El RUC ya existe en la base de datos"
+                    };
+                }
+
+                // Si no existe, consultar el API externo
+                var datosApi = await _dbPedido.ConsultarClienteApi(ruc);
+                
+                return new EcConsultaClienteResponse
+                {
+                    ExisteEnBD = false,
+                    DatosApi = datosApi,
+                    Mensaje = datosApi != null ? "Datos obtenidos del API externo" : "No se pudieron obtener datos del API externo"
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error al consultar cliente por RUC: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<EcConsultaClienteResponse> ConsultarClientePorDni(string dni)
+        {
+            try
+            {
+                // Primero validar si el DNI existe en la BD
+                var existeEnBD = await _dbPedido.ValidarDniExiste(dni);
+                
+                if (existeEnBD)
+                {
+                    // Obtener los datos del cliente existente
+                    var datosCliente = await _dbPedido.ObtenerDatosClientePorDni(dni);
+                    
+                    return new EcConsultaClienteResponse
+                    {
+                        ExisteEnBD = true,
+                        DatosApi = datosCliente,
+                        Mensaje = datosCliente != null 
+                            ? $"El DNI ya es cliente\n\nNombre: {datosCliente.Nombre ?? "N/A"}\nDirección: {datosCliente.Direccion ?? "N/A"}\nTeléfono: {datosCliente.Telefono ?? "N/A"}\nContacto: {datosCliente.Contacto ?? "N/A"}"
+                            : "El DNI ya existe en la base de datos"
+                    };
+                }
+
+                // Si no existe, consultar el API externo
+                var datosApi = await _dbPedido.ConsultarClienteApiPorDni(dni);
+                
+                return new EcConsultaClienteResponse
+                {
+                    ExisteEnBD = false,
+                    DatosApi = datosApi,
+                    Mensaje = datosApi != null ? "Datos obtenidos del API externo" : "No se pudieron obtener datos del API externo"
+                };
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error al consultar cliente por DNI: {ex.Message}", ex);
+            }
+        }
+
     }
 }

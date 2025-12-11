@@ -46,7 +46,7 @@ export class ModalUbigeoComponent implements OnInit {
   });
   readonly dialogRef = inject(MatDialogRef<ModalUbigeoComponent>);
   listUbigeos = signal<Array<Ubigeo>>([]);
-  displayedColumns = ['ubigeo', 'distrito', 'departamento', 'provincia'];
+  displayedColumns = ['ubigeo', 'departamento', 'provincia', 'distrito'];
   timeout: any;
 
   readonly data = inject<ModalUbigeoData>(MAT_DIALOG_DATA);
@@ -58,6 +58,12 @@ export class ModalUbigeoComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Si hay un filtro inicial, aplicarlo
+    if (this.data.filtroInicial) {
+      this.formUbigeo.patchValue({
+        busqueda: this.data.filtroInicial,
+      });
+    }
     this.GetAllUbigeos();
   }
 
@@ -77,7 +83,25 @@ export class ModalUbigeoComponent implements OnInit {
     this.pedidos.getSearchUbigeo(this.formUbigeo.value.busqueda).subscribe({
       next: (resp) => {
         this.spinner.hide();
-        this.listUbigeos.set(resp);
+        // Ordenar la lista por: Departamento, Distrito, Provincia
+        // Recordando el mapeo invertido:
+        // - distrito (BD) = Departamento (real)
+        // - provincia (BD) = Provincia (real)
+        // - departamento (BD) = Distrito (real)
+        // Entonces ordenamos por: distrito (BD), departamento (BD), provincia (BD)
+        const respOrdenada = resp.sort((a, b) => {
+          // Primero por Departamento (real) = distrito (BD)
+          if (a.distrito !== b.distrito) {
+            return a.distrito.localeCompare(b.distrito);
+          }
+          // Luego por Distrito (real) = departamento (BD)
+          if (a.departamento !== b.departamento) {
+            return a.departamento.localeCompare(b.departamento);
+          }
+          // Finalmente por Provincia (real) = provincia (BD)
+          return a.provincia.localeCompare(b.provincia);
+        });
+        this.listUbigeos.set(respOrdenada);
       },
       error: () => {
         this.spinner.hide();

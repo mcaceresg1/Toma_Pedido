@@ -181,7 +181,7 @@ export class DashboardComponent implements OnInit {
   getConnectionDetails(): void {
     this.userService.getConnectionDetails().subscribe({
       next: (resp) => {
-        this.connectionDetails.set(resp);
+      this.connectionDetails.set(resp);
       },
       error: (err) => {
         console.error('Error al obtener detalles de conexión:', err);

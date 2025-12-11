@@ -17,6 +17,7 @@ import {
   Cliente,
   NuevoCliente,
   NuevoClienteRespuesta,
+  ConsultaClienteResponse,
 } from '../../../../models/Cliente';
 import { isNil, isEmpty } from 'lodash';
 import { Moneda } from '../../../../models/Moneda';
@@ -95,6 +96,11 @@ export class VentasService {
   getCondiciones(): Observable<Condicion[]> {
     const url = `${this.URL}pedidos/GetCondicion`;
     return this.http.get<Condicion[]>(url);
+  }
+
+  consultarClientePorRuc(ruc: string): Observable<ConsultaClienteResponse> {
+    const url = `${this.URL}pedidos/ConsultarCliente/${ruc}`;
+    return this.http.get<ConsultaClienteResponse>(url);
   }
 
   crearCliente(cliente: NuevoCliente): Observable<NuevoClienteRespuesta> {

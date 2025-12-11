@@ -194,11 +194,11 @@ namespace ApiRoy.ResourceAccess
                 else if (!string.IsNullOrEmpty(dbLoginName))
                 {
                     return $"BD Login: {dbLoginName}";
-                }
-                else
-                {
-                    return "No se pudo extraer la información del string de conexión.";
-                }
+            }
+            else
+            {
+                return "No se pudo extraer la información del string de conexión.";
+            }
             }
             catch (Exception ex)
             {

@@ -15,8 +15,8 @@ namespace ApiRoy.Models
         [Required(ErrorMessage = "La razón social es requerida")]
         public string Razon { get; set; } = string.Empty;
         
-        [Required(ErrorMessage = "El RUC es requerido")]
-        [RegularExpression(@"^\d{11}$", ErrorMessage = "El RUC debe tener exactamente 11 dígitos numéricos")]
+        [Required(ErrorMessage = "El documento es requerido")]
+        [RegularExpression(@"^(\d{8}|\d{11})$", ErrorMessage = "El documento debe tener 8 dígitos (DNI) o 11 dígitos (RUC)")]
         public string Ruc { get; set; } = string.Empty;
         
         [Required(ErrorMessage = "La dirección es requerida")]
@@ -42,5 +42,28 @@ namespace ApiRoy.Models
         public string Ubigeo { get; set; } = string.Empty;
         
         public string Condicion { get; set; } = string.Empty;
+    }
+
+    public class EcClienteApiResponse
+    {
+        public string? RazonSocial { get; set; } // Para RUC
+        public string? Nombre { get; set; } // Para DNI (nombre_completo)
+        public string? NombreComercial { get; set; }
+        public string? Direccion { get; set; }
+        public string? Distrito { get; set; }
+        public string? Provincia { get; set; }
+        public string? Departamento { get; set; }
+        public string? Ubigeo { get; set; }
+        public string? Estado { get; set; }
+        public string? Condicion { get; set; }
+        public string? Telefono { get; set; } // Teléfono del cliente
+        public string? Contacto { get; set; } // Contacto del cliente
+    }
+
+    public class EcConsultaClienteResponse
+    {
+        public bool ExisteEnBD { get; set; }
+        public EcClienteApiResponse? DatosApi { get; set; }
+        public string? Mensaje { get; set; }
     }
 }

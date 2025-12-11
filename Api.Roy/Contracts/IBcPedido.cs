@@ -20,10 +20,7 @@
         Task<List<EcHistoricoPedidoCabecera>> GetHistoricoPedidos(DateTime? fechaInicio = null,DateTime? fechaFin = null,int? idVendedor = null);
         Task<List<EcHistoricoPedidoCabecera>> GetHistoricoPedidosPorZona(DateTime? fechaInicio = null, DateTime? fechaFin = null, int? vendedorId = null, bool? conDespacho = null);
         Task<List<EcFiltroVendedor>> GetVendedores();
-
-
-
-
-
+        Task<EcConsultaClienteResponse> ConsultarClientePorRuc(string ruc);
+        Task<EcConsultaClienteResponse> ConsultarClientePorDni(string dni);
     }
 }

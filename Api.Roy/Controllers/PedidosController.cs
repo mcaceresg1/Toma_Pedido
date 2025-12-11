@@ -5,6 +5,7 @@
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Mvc;
     using System.Security.Claims;
+    using System.Linq;
 
     [ApiController]
     [Route("api/pedidos")]
@@ -161,6 +162,52 @@
             catch (Exception ex)
             {
                 throw new Exception(ex.Message, ex);
+            }
+        }
+
+        [Authorize]
+        [HttpGet]
+        [Route("ConsultarCliente/{documento}")]
+        public async Task<IActionResult> ConsultarCliente(string documento)
+        {
+            try
+            {
+                var user = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+                if (user == null) { return Unauthorized(); }
+
+                // Extraer solo dígitos
+                var documentoLimpio = new string(documento.Where(char.IsDigit).ToArray());
+
+                // Determinar si es RUC (11 dígitos) o DNI (8 dígitos)
+                if (documentoLimpio.Length == 11)
+                {
+                    // Es RUC
+                    var response = await _bcPedido.ConsultarClientePorRuc(documentoLimpio);
+                    return StatusCode(StatusCodes.Status200OK, response);
+                }
+                else if (documentoLimpio.Length == 8)
+                {
+                    // Es DNI
+                    var response = await _bcPedido.ConsultarClientePorDni(documentoLimpio);
+                    return StatusCode(StatusCodes.Status200OK, response);
+                }
+                else
+                {
+                    return StatusCode(StatusCodes.Status400BadRequest, new
+                    {
+                        ok = false,
+                        message = "El documento debe tener 11 dígitos (RUC) o 8 dígitos (DNI)"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al consultar cliente por documento: {Documento}", documento);
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    ok = false,
+                    message = $"Error al consultar cliente: {ex.Message}"
+                });
             }
         }
 

@@ -153,6 +153,9 @@ namespace ApiRoy
             //BdContext
             //builder.Services.AddSqlServer<UNIEntities>(builder.Configuration.GetConnectionString("OrgConnString"));
 
+            // HttpClientFactory para llamadas a APIs externas
+            builder.Services.AddHttpClient();
+
             //Mapeo IBc
             builder.Services.AddScoped<IBcLogin, BcLogin>();
             builder.Services.AddScoped<IBcPedido, BcPedido>();

@@ -20,5 +20,11 @@ namespace ApiRoy.Contracts
         Task<List<EcHistoricoPedidoCabecera>> GetHistoricoPedidosPorZona(DateTime? fechaInicio = null, DateTime? fechaFin = null, int? vendedorId = null, bool? conDespacho = null);
         Task<List<EcHistoricoPedidoDetalle>> GetHistoricoPedidosDetalle(int nroOperacion);
         Task<List<EcFiltroVendedor>> GetVendedores();
+        Task<bool> ValidarRucExiste(string ruc);
+        Task<bool> ValidarDniExiste(string dni);
+        Task<EcClienteApiResponse?> ObtenerDatosClientePorRuc(string ruc);
+        Task<EcClienteApiResponse?> ObtenerDatosClientePorDni(string dni);
+        Task<EcClienteApiResponse?> ConsultarClienteApi(string ruc);
+        Task<EcClienteApiResponse?> ConsultarClienteApiPorDni(string dni);
     }
 }
