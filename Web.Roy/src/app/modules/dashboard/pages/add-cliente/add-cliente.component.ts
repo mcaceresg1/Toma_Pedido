@@ -970,8 +970,10 @@ export class AddClienteComponent implements OnInit, OnDestroy {
           }, 2000);
         } else {
           this.spinner.hide();
+          const mensaje = resp.message || 'No se pudo crear el cliente. Por favor, intente nuevamente.';
           Swal.fire({
-            title: 'Error al crear el cliente..',
+            title: 'Error al crear el cliente',
+            text: mensaje,
             icon: 'error',
             confirmButtonColor: '#17a2b8',
             confirmButtonText: 'Ok',
@@ -980,9 +982,29 @@ export class AddClienteComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.spinner.hide();
+        
+        // Mostrar errores de validación específicos si están disponibles
+        let mensajeError = 'Ocurrió un error al crear el cliente.';
+        if (err.error && err.error.errors && Array.isArray(err.error.errors)) {
+          const errores = err.error.errors.map((e: any) => {
+            // Formato: { Field: 'campo', Errors: ['mensaje1', 'mensaje2'] }
+            if (e.Errors && Array.isArray(e.Errors)) {
+              const campo = e.Field ? `${e.Field}: ` : '';
+              return `${campo}${e.Errors.join(', ')}`;
+            }
+            // Formato alternativo: solo ErrorMessage
+            return e.ErrorMessage || e.Field || e;
+          }).join('\n');
+          mensajeError = `Error de validación:\n${errores}`;
+        } else if (err.error && err.error.message) {
+          mensajeError = err.error.message;
+        } else if (err.message) {
+          mensajeError = err.message;
+        }
+
         Swal.fire({
-          title: 'Error al crear el cliente..',
-          text: err.error ?? err.message,
+          title: 'Error al crear el cliente',
+          text: mensajeError,
           icon: 'error',
           confirmButtonColor: '#17a2b8',
           confirmButtonText: 'Ok',
