@@ -243,26 +243,58 @@ export class AddClienteComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Maneja el evento keydown para el campo Enter (avanzar al siguiente campo)
+   * Maneja el evento keydown para el campo de documento
+   * Si es Enter, ejecuta la búsqueda del cliente y mueve el foco al siguiente campo
    */
   onDocumentoKeyDown(event: KeyboardEvent): void {
-    // Solo manejar Enter para avanzar al siguiente campo
     if (event.key === 'Enter') {
-      this.presionandoEnter = true;
       event.preventDefault();
+      this.presionandoEnter = true;
       
-      const currentField = event.target as HTMLElement;
-      const form = currentField.closest('form');
-      if (form) {
-        const inputs = Array.from(form.querySelectorAll('input, select, textarea')) as HTMLElement[];
-        const currentIndex = inputs.indexOf(currentField);
-        if (currentIndex < inputs.length - 1) {
-          inputs[currentIndex + 1].focus();
+      // Ejecutar la búsqueda del cliente (similar a onDocumentoBlur)
+      const rucControl = this.formCliente.get('ruc');
+      if (rucControl && rucControl.value) {
+        // Obtener el valor del documento
+        const documentoRaw = rucControl.value.toString();
+        const config = this.getConfiguracionDocumento();
+        
+        // Limpiar el documento según el tipo
+        let documentoLimpio = documentoRaw;
+        if (config.requiereValidacionExacta) {
+          documentoLimpio = documentoRaw.replace(/\D/g, '');
+        } else {
+          documentoLimpio = documentoRaw.trim();
         }
+        
+        // Limitar longitud si es necesario
+        if (config.maxLength > 0 && documentoLimpio.length > config.maxLength) {
+          documentoLimpio = documentoLimpio.substring(0, config.maxLength);
+        }
+        
+        // Actualizar el valor en el control
+        if (documentoLimpio !== documentoRaw) {
+          rucControl.setValue(documentoLimpio, { emitEvent: false });
+        }
+        
+        // Ejecutar la búsqueda
+        this.onDocumentoBlur();
       }
       
+      // Mover el foco al siguiente campo después de un breve delay
       setTimeout(() => {
         this.presionandoEnter = false;
+        const currentField = event.target as HTMLElement;
+        const form = currentField.closest('form');
+        if (form) {
+          const inputs = Array.from(form.querySelectorAll('input:not([readonly]), select, textarea')) as HTMLElement[];
+          const currentIndex = inputs.indexOf(currentField);
+          if (currentIndex < inputs.length - 1) {
+            inputs[currentIndex + 1].focus();
+          } else {
+            // Si es el último campo, quitar el foco
+            currentField.blur();
+          }
+        }
       }, 100);
     }
   }
