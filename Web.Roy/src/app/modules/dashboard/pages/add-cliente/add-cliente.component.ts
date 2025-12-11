@@ -1017,17 +1017,43 @@ export class AddClienteComponent implements OnInit, OnDestroy {
         
         // Mostrar errores de validación específicos si están disponibles
         let mensajeError = 'Ocurrió un error al crear el cliente.';
+        
         if (err.error && err.error.errors && Array.isArray(err.error.errors)) {
           const errores = err.error.errors.map((e: any) => {
-            // Formato: { Field: 'campo', Errors: ['mensaje1', 'mensaje2'] }
-            if (e.Errors && Array.isArray(e.Errors)) {
-              const campo = e.Field ? `${e.Field}: ` : '';
-              return `${campo}${e.Errors.join(', ')}`;
+            // El backend devuelve en camelCase: { field: 'campo', errors: ['mensaje1', 'mensaje2'] }
+            // También verificar PascalCase por compatibilidad
+            const errorsArray = e.errors || e.Errors;
+            const fieldName = e.field || e.Field;
+            
+            if (errorsArray && Array.isArray(errorsArray)) {
+              const campo = fieldName ? `${fieldName}: ` : '';
+              return `${campo}${errorsArray.join(', ')}`;
             }
-            // Formato alternativo: solo ErrorMessage
-            return e.ErrorMessage || e.Field || e;
-          }).join('\n');
-          mensajeError = `Error de validación:\n${errores}`;
+            
+            // Formato alternativo: solo errorMessage o mensaje directo
+            if (e.errorMessage || e.ErrorMessage) {
+              return e.errorMessage || e.ErrorMessage;
+            }
+            
+            // Si es un string, devolverlo directamente
+            if (typeof e === 'string') {
+              return e;
+            }
+            
+            // Si es un objeto, intentar extraer información útil
+            if (typeof e === 'object' && e !== null) {
+              // Intentar obtener cualquier propiedad que parezca un mensaje
+              const mensaje = e.message || e.Message || e.error || e.Error || fieldName || JSON.stringify(e);
+              return mensaje;
+            }
+            
+            // Último recurso: convertir a string
+            return String(e);
+          }).filter((msg: string) => msg && msg.trim() !== ''); // Filtrar mensajes vacíos
+          
+          if (errores.length > 0) {
+            mensajeError = `Error de validación:\n${errores.join('\n')}`;
+          }
         } else if (err.error && err.error.message) {
           mensajeError = err.error.message;
         } else if (err.message) {
