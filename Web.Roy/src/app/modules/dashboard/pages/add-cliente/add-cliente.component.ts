@@ -244,7 +244,7 @@ export class AddClienteComponent implements OnInit, OnDestroy {
 
   /**
    * Maneja el evento keydown para el campo de documento
-   * Si es Enter, ejecuta la búsqueda del cliente y mueve el foco al siguiente campo
+   * Si es Enter, ejecuta la búsqueda del cliente
    */
   onDocumentoKeyDown(event: KeyboardEvent): void {
     if (event.key === 'Enter') {
@@ -280,21 +280,8 @@ export class AddClienteComponent implements OnInit, OnDestroy {
         this.onDocumentoBlur();
       }
       
-      // Mover el foco al siguiente campo después de un breve delay
       setTimeout(() => {
         this.presionandoEnter = false;
-        const currentField = event.target as HTMLElement;
-        const form = currentField.closest('form');
-        if (form) {
-          const inputs = Array.from(form.querySelectorAll('input:not([readonly]), select, textarea')) as HTMLElement[];
-          const currentIndex = inputs.indexOf(currentField);
-          if (currentIndex < inputs.length - 1) {
-            inputs[currentIndex + 1].focus();
-          } else {
-            // Si es el último campo, quitar el foco
-            currentField.blur();
-          }
-        }
       }, 100);
     }
   }
@@ -524,28 +511,13 @@ export class AddClienteComponent implements OnInit, OnDestroy {
           return;
         }
 
-        // Si el documento no existe en BD, mostrar mensaje y esperar confirmación antes de consultar API
+        // Si el documento no existe en BD, procesar directamente los datos del API
         if (!resp.existeEnBD) {
-          // Verificar nuevamente antes de mostrar el modal
-          if (!this.componenteActivo) {
-            return;
+          // Verificar que el componente siga activo antes de procesar
+          if (this.componenteActivo) {
+            // Procesar directamente los datos del API sin mostrar modal de aviso
+            this.procesarDatosApi(resp, documento, tipo);
           }
-
-          Swal.fire({
-            title: `${nombreTipoDoc} no encontrado`,
-            text: `El ${nombreTipoDoc} no existe en la base de datos local. Se consultará la información desde el API externo.`,
-            icon: 'info',
-            confirmButtonColor: '#17a2b8',
-            confirmButtonText: 'Continuar',
-            showCancelButton: false,
-            allowOutsideClick: false,
-          }).then((result) => {
-            // Verificar que el componente siga activo antes de procesar
-            if (result.isConfirmed && this.componenteActivo) {
-              // Después de la confirmación, procesar los datos del API si están disponibles
-              this.procesarDatosApi(resp, documento, tipo);
-            }
-          });
           return;
         }
 
@@ -1017,43 +989,17 @@ export class AddClienteComponent implements OnInit, OnDestroy {
         
         // Mostrar errores de validación específicos si están disponibles
         let mensajeError = 'Ocurrió un error al crear el cliente.';
-        
         if (err.error && err.error.errors && Array.isArray(err.error.errors)) {
           const errores = err.error.errors.map((e: any) => {
-            // El backend devuelve en camelCase: { field: 'campo', errors: ['mensaje1', 'mensaje2'] }
-            // También verificar PascalCase por compatibilidad
-            const errorsArray = e.errors || e.Errors;
-            const fieldName = e.field || e.Field;
-            
-            if (errorsArray && Array.isArray(errorsArray)) {
-              const campo = fieldName ? `${fieldName}: ` : '';
-              return `${campo}${errorsArray.join(', ')}`;
+            // Formato: { Field: 'campo', Errors: ['mensaje1', 'mensaje2'] }
+            if (e.Errors && Array.isArray(e.Errors)) {
+              const campo = e.Field ? `${e.Field}: ` : '';
+              return `${campo}${e.Errors.join(', ')}`;
             }
-            
-            // Formato alternativo: solo errorMessage o mensaje directo
-            if (e.errorMessage || e.ErrorMessage) {
-              return e.errorMessage || e.ErrorMessage;
-            }
-            
-            // Si es un string, devolverlo directamente
-            if (typeof e === 'string') {
-              return e;
-            }
-            
-            // Si es un objeto, intentar extraer información útil
-            if (typeof e === 'object' && e !== null) {
-              // Intentar obtener cualquier propiedad que parezca un mensaje
-              const mensaje = e.message || e.Message || e.error || e.Error || fieldName || JSON.stringify(e);
-              return mensaje;
-            }
-            
-            // Último recurso: convertir a string
-            return String(e);
-          }).filter((msg: string) => msg && msg.trim() !== ''); // Filtrar mensajes vacíos
-          
-          if (errores.length > 0) {
-            mensajeError = `Error de validación:\n${errores.join('\n')}`;
-          }
+            // Formato alternativo: solo ErrorMessage
+            return e.ErrorMessage || e.Field || e;
+          }).join('\n');
+          mensajeError = `Error de validación:\n${errores}`;
         } else if (err.error && err.error.message) {
           mensajeError = err.error.message;
         } else if (err.message) {

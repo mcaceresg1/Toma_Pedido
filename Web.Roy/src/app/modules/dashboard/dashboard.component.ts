@@ -54,7 +54,7 @@ export class DashboardComponent implements OnInit {
   userEmpresas = signal<Empresa[]>([]);
   _snackbar = inject(MatSnackBar);
   mostrarImpuesto = signal<boolean>(false);
-  appVersion: string = '2.2.1';
+  appVersion: string = '2.2.0';
   
   // Estados de expansión de menús
   ventasExpanded: boolean = false;
