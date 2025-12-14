@@ -49,9 +49,13 @@ namespace ApiRoy.ResourceAccess
                         PreciosPermitidos = r["PRECIO_PERMITIDOS"]?.ToString()
                     };
                 }
+                // Obtener el nombre de la BD de login
+                string loginDbName = GetLoginDatabaseName();
+                
                 var parametros = new List<DbParametro>
                 {
                     new DbParametro("@USER", SqlDbType.VarChar, ParameterDirection.Input, user),
+                    new DbParametro("@BD_LOGIN", SqlDbType.VarChar, ParameterDirection.Input, loginDbName),
                 };
                 Func<DataRow, EcUsuario> GetItemDelegate = GetItem;
 
@@ -123,9 +127,13 @@ namespace ApiRoy.ResourceAccess
                     };
 
                 }
+                // Obtener el nombre de la BD de login
+                string loginDbName = GetLoginDatabaseName();
+                
                 var parametros = new List<DbParametro>
                 {
                     new DbParametro("@USUARIO", SqlDbType.VarChar, ParameterDirection.Input, usuario),
+                    new DbParametro("@BD_LOGIN", SqlDbType.VarChar, ParameterDirection.Input, loginDbName),
                 };
                 Func<DataRow, EcEmpresa> GetItemDelegate = GetItem;
 
@@ -220,6 +228,30 @@ namespace ApiRoy.ResourceAccess
             );
             
             return match.Success ? match.Groups[1].Value.Trim() : string.Empty;
+        }
+
+        /// <summary>
+        /// Obtiene el nombre de la base de datos de login desde la configuración
+        /// </summary>
+        private string GetLoginDatabaseName()
+        {
+            string loginDbConnString;
+            if (_environment.IsDevelopment())
+            {
+                loginDbConnString = _StaticConfig.GetConnectionString("DevConnStringDbLogin") ?? throw new InvalidOperationException("DevConnStringDbLogin no está configurado");
+            }
+            else
+            {
+                loginDbConnString = _StaticConfig.GetConnectionString("OrgConnStringDbLogin") ?? throw new InvalidOperationException("OrgConnStringDbLogin no está configurado");
+            }
+            
+            string loginDbName = ExtractDatabaseName(loginDbConnString);
+            if (string.IsNullOrEmpty(loginDbName))
+            {
+                throw new InvalidOperationException("No se pudo determinar el nombre de la base de datos de login");
+            }
+            
+            return loginDbName;
         }
     }
 }

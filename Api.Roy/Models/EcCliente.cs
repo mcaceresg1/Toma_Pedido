@@ -25,7 +25,6 @@ namespace ApiRoy.Models
         [Required(ErrorMessage = "El teléfono es requerido")]
         public string Telefono { get; set; } = string.Empty;
         
-        [Required(ErrorMessage = "La ciudad es requerida")]
         public string Ciudad { get; set; } = string.Empty;
         
         [Required(ErrorMessage = "El contacto es requerido")]
@@ -58,6 +57,8 @@ namespace ApiRoy.Models
         public string? Condicion { get; set; }
         public string? Telefono { get; set; } // Teléfono del cliente
         public string? Contacto { get; set; } // Contacto del cliente
+        [System.Text.Json.Serialization.JsonPropertyName("APIproveedor")]
+        public string? APIproveedor { get; set; } // Indica qué proveedor se usó (APIPERU, MIGO, GRAPH_PERU, etc.)
     }
 
     public class EcConsultaClienteResponse

@@ -53,15 +53,11 @@ namespace ApiRoy
                 }
 
                 // Agregar Serilog
+                // La configuración de WriteTo ya está en appsettings.json y se carga con ReadFrom.Configuration
                 builder.Host.UseSerilog((context, services, configuration) => configuration
                     .ReadFrom.Configuration(context.Configuration)
                     .ReadFrom.Services(services)
-                    .Enrich.FromLogContext()
-                    .WriteTo.Console()
-                    .WriteTo.File(
-                        path: "logs/api-.log",
-                        rollingInterval: RollingInterval.Day,
-                        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}"));
+                    .Enrich.FromLogContext());
 
             // Rate Limiting Configuration
             builder.Services.AddMemoryCache();

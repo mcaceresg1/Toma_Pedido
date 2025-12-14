@@ -58,10 +58,8 @@ export class AuthService {
     console.log('Cookies después de eliminar:', this.cookieService.getAll());
     console.log('=== LOGOUT COMPLETADO - Redirigiendo a auth ===');
     
-    // Redireccionar al login
-    this.router.navigate(['/', 'auth']).then(() => {
-      // Forzar recarga para limpiar cualquier estado en memoria
-      window.location.reload();
-    });
+    // Usar window.location.href para forzar una navegación completa y evitar problemas con el router
+    // Esto evita que los guards o interceptores interfieran con la navegación
+    window.location.href = '/auth';
   }
 }

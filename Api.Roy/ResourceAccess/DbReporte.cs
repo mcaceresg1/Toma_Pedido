@@ -3,6 +3,7 @@ using ApiRoy.Models;
 using ApiRoy.ResourceAccess.Database;
 using ApiRoy.Utils;
 using System.Data;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
 namespace ApiRoy.ResourceAccess
@@ -113,14 +114,55 @@ namespace ApiRoy.ResourceAccess
             }
             try
             {
+                string loginDbName = GetLoginDatabaseName();
+                var parametros = new List<DbParametro>()
+                {
+                    new DbParametro("@BD_LOGIN", SqlDbType.VarChar, ParameterDirection.Input, loginDbName)
+                };
 
                 Func<DataRow, EcProveedorDpto> GetItemDelegate = GetItem;
-                return Task.FromResult(dbData.ObtieneLista("USP_GET_REPORTE_PROVEEDOR", GetItemDelegate));
+                return Task.FromResult(dbData.ObtieneLista("USP_GET_REPORTE_PROVEEDOR", GetItemDelegate, parametros));
             }
             catch (Exception ex)
             {
                 throw new Exception(ex.Message, ex);
             }
+        }
+
+        private string ExtractDatabaseName(string connectionString)
+        {
+            if (string.IsNullOrEmpty(connectionString))
+                return string.Empty;
+            
+            // Buscar "Initial Catalog=" o "Database=" (ambos formatos)
+            var match = Regex.Match(
+                connectionString, 
+                @"(?:initial\s+catalog|database)\s*=\s*([^;]+)", 
+                RegexOptions.IgnoreCase
+            );
+            
+            return match.Success ? match.Groups[1].Value.Trim() : string.Empty;
+        }
+
+        private string GetLoginDatabaseName()
+        {
+            string loginDbConnString;
+            if (_environment.IsDevelopment())
+            {
+                loginDbConnString = _StaticConfig.GetConnectionString("DevConnStringDbLogin") ?? throw new InvalidOperationException("DevConnStringDbLogin no está configurado");
+            }
+            else
+            {
+                loginDbConnString = _StaticConfig.GetConnectionString("OrgConnStringDbLogin") ?? throw new InvalidOperationException("OrgConnStringDbLogin no está configurado");
+            }
+            
+            string loginDbName = ExtractDatabaseName(loginDbConnString);
+            if (string.IsNullOrEmpty(loginDbName))
+            {
+                throw new InvalidOperationException("No se pudo determinar el nombre de la base de datos de login");
+            }
+            
+            return loginDbName;
         }
     }
 }

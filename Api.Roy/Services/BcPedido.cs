@@ -1,4 +1,4 @@
-﻿namespace ApiRoy.Services
+namespace ApiRoy.Services
 {
     using ApiRoy.Contracts;
     using ApiRoy.Models;
@@ -412,6 +412,19 @@
             catch (Exception ex)
             {
                 throw new Exception($"Error al consultar cliente por DNI: {ex.Message}", ex);
+            }
+        }
+
+        public void RegistrarEmpresasUsuario(string usuario)
+        {
+            try
+            {
+                _dbPedido.RegistrarEmpresasUsuario(usuario);
+            }
+            catch (Exception ex)
+            {
+                // No lanzar excepción, solo loggear el error para no interrumpir el login
+                // El log de empresas es informativo, no crítico
             }
         }
 

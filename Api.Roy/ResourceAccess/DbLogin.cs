@@ -10,19 +10,19 @@ namespace ApiRoy.ResourceAccess
         private readonly DBManager db;
         private static IConfiguration? _StaticConfig { get; set; }
         private readonly IWebHostEnvironment _environment;
+        private readonly ILogger<DbLogin> _logger;
 
-        public DbLogin(IConfiguration config, IWebHostEnvironment environment)
+        public DbLogin(IConfiguration config, IWebHostEnvironment environment, ILogger<DbLogin> logger)
         {
             _environment = environment;
             _StaticConfig = config;
+            _logger = logger;
             string? DbConnString;
             if (this._environment.IsDevelopment())
             {
                 DbConnString = _StaticConfig.GetConnectionString("DevConnStringDbLogin");
-                // Log temporal para debug - usar Serilog si está disponible
-                var logger = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<DbLogin>();
-                logger.LogDebug("[DbLogin] Ambiente: Development");
-                logger.LogDebug("[DbLogin] Connection String obtenida: {ConnString}", DbConnString ?? "NULL");
+                _logger.LogDebug("[DbLogin] Ambiente: Development");
+                _logger.LogDebug("[DbLogin] Connection String obtenida: {ConnString}", DbConnString ?? "NULL");
                 if (string.IsNullOrEmpty(DbConnString) || DbConnString.Contains("CONFIGURAR"))
                 {
                     throw new InvalidOperationException($"DevConnStringDbLogin no está configurado correctamente. Valor actual: {DbConnString}");
@@ -31,9 +31,8 @@ namespace ApiRoy.ResourceAccess
             else
             {
                 DbConnString = _StaticConfig.GetConnectionString("OrgConnStringDbLogin");
-                var logger = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<DbLogin>();
-                logger.LogDebug("[DbLogin] Ambiente: Production");
-                logger.LogDebug("[DbLogin] Connection String obtenida: {ConnString}", DbConnString ?? "NULL");
+                _logger.LogDebug("[DbLogin] Ambiente: Production");
+                _logger.LogDebug("[DbLogin] Connection String obtenida: {ConnString}", DbConnString ?? "NULL");
             }
             db = new DBManager(DbConnString ?? throw new InvalidOperationException("Connection string not configured"));
         }
@@ -44,12 +43,10 @@ namespace ApiRoy.ResourceAccess
             {
                 EcLoginResult? GetItem(DataRow r)
                 {
-                    var logger = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<DbLogin>();
-                    
                     // Log detallado de lo que devuelve el stored procedure
                     var response = Convert.ToInt32(r["RESPONSE"]);
-                    logger.LogDebug("[DbLogin.GetItem] RESPONSE recibido: {Response}", response);
-                    logger.LogDebug("[DbLogin.GetItem] EMPRESA: {Empresa}, VENDEDOR: {Vendedor}, ID: {Id}", 
+                    _logger.LogDebug("[DbLogin.GetItem] RESPONSE recibido: {Response}", response);
+                    _logger.LogDebug("[DbLogin.GetItem] EMPRESA: {Empresa}, VENDEDOR: {Vendedor}, ID: {Id}", 
                         r["EMPRESA"]?.ToString() ?? "NULL", 
                         r["VENDEDOR"]?.ToString() ?? "NULL", 
                         r["ID"]?.ToString() ?? "NULL");
@@ -67,7 +64,7 @@ namespace ApiRoy.ResourceAccess
                     }
                     else
                     {
-                        logger.LogDebug("[DbLogin.GetItem] RESPONSE != 1, devolviendo null. RESPONSE = {Response}", response);
+                        _logger.LogDebug("[DbLogin.GetItem] RESPONSE != 1, devolviendo null. RESPONSE = {Response}", response);
                     }
                     return null;
                 }
@@ -81,28 +78,26 @@ namespace ApiRoy.ResourceAccess
                 var result = db.ObtieneLista("USP_SESION_USUARIO", GetItemDelegate, parametros);
                 
                 // Log para debug
-                var logger = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<DbLogin>();
-                logger.LogDebug("[DbLogin.Login] Usuario: {Usuario}, Resultado: {Result}", ecLogin.Usuario, result == null ? "NULL" : $"Count={result.Count}");
+                _logger.LogDebug("[DbLogin.Login] Usuario: {Usuario}, Resultado: {Result}", ecLogin.Usuario, result == null ? "NULL" : $"Count={result.Count}");
                 
                 if (result == null || result.Count == 0)
                 {
-                    logger.LogWarning("[DbLogin.Login] Login fallido - resultado null o vacío para usuario: {Usuario}", ecLogin.Usuario);
+                    _logger.LogWarning("[DbLogin.Login] Login fallido - resultado null o vacío para usuario: {Usuario}", ecLogin.Usuario);
                     return Task.FromResult<EcLoginResult?>(null);
                 }
                 
-                logger.LogInformation("[DbLogin.Login] Login exitoso para usuario: {Usuario}, Response: {Response}", ecLogin.Usuario, result[0]?.Response);
+                _logger.LogInformation("[DbLogin.Login] Login exitoso para usuario: {Usuario}, Response: {Response}", ecLogin.Usuario, result[0]?.Response);
                 return Task.FromResult<EcLoginResult?>(result[0]);
 
             }
             catch (Exception ex)
             {
                 // Log detallado del error
-                var logger = Microsoft.Extensions.Logging.LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<DbLogin>();
-                logger.LogError(ex, "[ERROR DbLogin.Login] Excepción al intentar login para usuario: {Usuario}. Error: {Error}", ecLogin.Usuario, ex.Message);
-                logger.LogError("[ERROR DbLogin.Login] StackTrace: {StackTrace}", ex.StackTrace ?? "N/A");
+                _logger.LogError(ex, "[ERROR DbLogin.Login] Excepción al intentar login para usuario: {Usuario}. Error: {Error}", ecLogin.Usuario, ex.Message);
+                _logger.LogError("[ERROR DbLogin.Login] StackTrace: {StackTrace}", ex.StackTrace ?? "N/A");
                 if (ex.InnerException != null)
                 {
-                    logger.LogError("[ERROR DbLogin.Login] InnerException: {InnerError}", ex.InnerException.Message);
+                    _logger.LogError("[ERROR DbLogin.Login] InnerException: {InnerError}", ex.InnerException.Message);
                 }
                 throw new Exception(ex.Message, ex);
             }

@@ -22,6 +22,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { UserService } from '../../services/user.service';
+import { UbigeoService } from '../../services/ubigeo.service';
 import { Usuario } from '../../../../../models/User';
 import { Empresa } from '../../../../../models/Empresa';
 import { Condicion } from '../../../../../models/Condicion';
@@ -30,6 +31,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { ModalUbigeoData, Ubigeo } from '../../../../../models/Ubigeo';
 import { ModalUbigeoComponent } from '../../components/modal-ubigeo/modal-ubigeo.component';
 import { TipoDocumento } from '../../../../../models/TipoDocumento';
+import { Vendedor } from '../../../../../models/Vendedor';
 
 @Component({
   selector: 'app-add-cliente',
@@ -60,6 +62,9 @@ export class AddClienteComponent implements OnInit, OnDestroy {
   tiposDocumento = signal<TipoDocumento[]>([]);
   precios = signal<{ codigo: string; label: string }[]>([]);
   ubigeo = signal<Ubigeo | null>(null);
+  ubigeos = signal<Ubigeo[]>([]);
+  vendedores = signal<Vendedor[]>([]);
+  nombreVendedor = signal<string>('');
   readonly ubigeoDialog = inject(MatDialog);
   private ultimoDocumentoConsultado: string = ''; // Para evitar consultas duplicadas
   private componenteActivo: boolean = true; // Para evitar consultas al cambiar de pantalla
@@ -83,7 +88,7 @@ export class AddClienteComponent implements OnInit, OnDestroy {
     ruc: new FormControl<string>('', [Validators.required]),
     direccion: new FormControl<string>('', [Validators.required]),
     telefono: new FormControl<string>('', [Validators.required]),
-    ciudad: new FormControl<string>('', [Validators.required]),
+    ciudad: new FormControl<string>('', []),
     contacto: new FormControl<string>('', [Validators.required]),
     telefonoContacto: new FormControl<string>(''),
     correo: new FormControl<string>(''),
@@ -100,16 +105,20 @@ export class AddClienteComponent implements OnInit, OnDestroy {
   constructor(
     private userService: UserService,
     private pedidosService: VentasService,
+    private ubigeoService: UbigeoService,
     private spinner: NgxSpinnerService,
     private router: Router
   ) {}
 
   ngOnInit(): void {
     this.componenteActivo = true; // Asegurar que esté activo al inicializar
+    // Primero cargar vendedores para que estén disponibles cuando se cargue el usuario
+    this.getVendedores();
     this.getUserLogin();
     this.getEmpresa();
     this.getCondiciones();
     this.getTiposDocumento();
+    this.getAllUbigeos();
     
     // Listener para limpiar todos los campos cuando cambie el tipo de documento
     this.formCliente.get('tipoDocumento')?.valueChanges.subscribe(() => {
@@ -513,11 +522,11 @@ export class AddClienteComponent implements OnInit, OnDestroy {
 
         // Si el documento no existe en BD, procesar directamente los datos del API
         if (!resp.existeEnBD) {
-          // Verificar que el componente siga activo antes de procesar
+            // Verificar que el componente siga activo antes de procesar
           if (this.componenteActivo) {
             // Procesar directamente los datos del API sin mostrar modal de aviso
-            this.procesarDatosApi(resp, documento, tipo);
-          }
+              this.procesarDatosApi(resp, documento, tipo);
+            }
           return;
         }
 
@@ -539,7 +548,7 @@ export class AddClienteComponent implements OnInit, OnDestroy {
         // Mostrar error al usuario
         Swal.fire({
           title: 'Error',
-          text: err.error?.message || 'Ocurrió un error al consultar el documento. Por favor, intente nuevamente.',
+          html: `<div style="font-size: calc(1em - 2px);">${err.error?.message || 'Ocurrió un error al consultar el documento. Por favor, intente nuevamente.'}</div>`,
           icon: 'error',
           confirmButtonColor: '#17a2b8',
           confirmButtonText: 'Ok',
@@ -571,10 +580,23 @@ export class AddClienteComponent implements OnInit, OnDestroy {
             ? (resp.datosApi.razonSocial || '')
             : (resp.datosApi.nombre || '');
           
+          // Construir dirección completa: dirección, departamento, provincia, distrito
+          const partesDireccion = [
+            resp.datosApi.direccion || '',
+            resp.datosApi.departamento || '',
+            resp.datosApi.provincia || '',
+            resp.datosApi.distrito || ''
+          ].filter(parte => parte.trim() !== '');
+          
+          const direccionCompleta = partesDireccion.join(', ');
+          
+          // Convertir a mayúsculas los valores que vienen del API
+          const ciudadValue = (resp.datosApi.distrito || resp.datosApi.provincia || resp.datosApi.departamento || '').toUpperCase();
+          
           this.formCliente.patchValue({
-            razon: nombreRazon,
-            direccion: resp.datosApi.direccion || '',
-            ciudad: resp.datosApi.distrito || resp.datosApi.provincia || resp.datosApi.departamento || '',
+            razon: nombreRazon ? nombreRazon.toUpperCase() : '',
+            direccion: direccionCompleta.toUpperCase(),
+            ciudad: ciudadValue,
           });
 
           // Intentar buscar el ubigeo basándose en distrito/provincia/departamento
@@ -583,75 +605,59 @@ export class AddClienteComponent implements OnInit, OnDestroy {
           // - PROVINCIA (columna) = PROVINCIA (del API)
           // - DEPARTAMENTO (columna) = DISTRITO (del API)
           if (resp.datosApi.distrito || resp.datosApi.provincia || resp.datosApi.departamento) {
-            // Buscar primero por distrito (más específico)
-            const busquedaUbigeo = resp.datosApi.distrito || resp.datosApi.provincia || resp.datosApi.departamento || '';
-            this.pedidosService.getSearchUbigeo(busquedaUbigeo).subscribe({
-              next: (ubigeos) => {
-                // Si se encuentra un ubigeo que coincida, establecerlo
-                if (ubigeos && ubigeos.length > 0) {
+            // Buscar en la lista de ubigeos ya cargada
+            const ubigeosDisponibles = this.ubigeos();
+            
+            if (ubigeosDisponibles && ubigeosDisponibles.length > 0) {
                   // Buscar el que mejor coincida considerando el mapeo invertido:
                   // Prioridad 1: Coincidencia exacta de distrito (API distrito = tabla departamento)
-                  // Prioridad 2: Coincidencia de distrito + provincia
-                  // Prioridad 3: Coincidencia de distrito + departamento
-                  // Prioridad 4: Coincidencia de provincia + departamento
-                  let ubigeoEncontrado = ubigeos.find(u => {
-                    // Coincidencia perfecta: distrito del API coincide con departamento de la tabla
-                    // Y provincia del API coincide con provincia de la tabla
-                    // Y departamento del API coincide con distrito de la tabla
+              // Y provincia (API provincia = tabla provincia)
+              // Y departamento (API departamento = tabla distrito)
+              let ubigeoEncontrado = ubigeosDisponibles.find(u => {
                     const distritoMatch = resp.datosApi?.distrito && 
-                      u.departamento?.toLowerCase() === resp.datosApi.distrito.toLowerCase();
+                  u.departamento?.toLowerCase().trim() === resp.datosApi.distrito.toLowerCase().trim();
                     const provinciaMatch = resp.datosApi?.provincia && 
-                      u.provincia?.toLowerCase() === resp.datosApi.provincia.toLowerCase();
+                  u.provincia?.toLowerCase().trim() === resp.datosApi.provincia.toLowerCase().trim();
                     const departamentoMatch = resp.datosApi?.departamento && 
-                      u.distrito?.toLowerCase() === resp.datosApi.departamento.toLowerCase();
+                  u.distrito?.toLowerCase().trim() === resp.datosApi.departamento.toLowerCase().trim();
                     
-                    // Coincidencia perfecta de los 3 campos
-                    if (distritoMatch && provinciaMatch && departamentoMatch) {
-                      return true;
-                    }
-                    return false;
+                return distritoMatch && provinciaMatch && departamentoMatch;
                   });
 
                   // Si no hay coincidencia perfecta, buscar por distrito + provincia
                   if (!ubigeoEncontrado) {
-                    ubigeoEncontrado = ubigeos.find(u => {
+                ubigeoEncontrado = ubigeosDisponibles.find(u => {
                       const distritoMatch = resp.datosApi?.distrito && 
-                        u.departamento?.toLowerCase() === resp.datosApi.distrito.toLowerCase();
+                    u.departamento?.toLowerCase().trim() === resp.datosApi.distrito.toLowerCase().trim();
                       const provinciaMatch = resp.datosApi?.provincia && 
-                        u.provincia?.toLowerCase() === resp.datosApi.provincia.toLowerCase();
+                    u.provincia?.toLowerCase().trim() === resp.datosApi.provincia.toLowerCase().trim();
                       return distritoMatch && provinciaMatch;
                     });
                   }
 
                   // Si aún no hay coincidencia, buscar solo por distrito
-                  if (!ubigeoEncontrado) {
-                    ubigeoEncontrado = ubigeos.find(u => {
-                      return resp.datosApi?.distrito && 
-                        u.departamento?.toLowerCase() === resp.datosApi.distrito.toLowerCase();
+              if (!ubigeoEncontrado && resp.datosApi?.distrito) {
+                ubigeoEncontrado = ubigeosDisponibles.find(u => {
+                  return u.departamento?.toLowerCase().trim() === resp.datosApi.distrito.toLowerCase().trim();
                     });
                   }
 
                   // Si aún no hay coincidencia, buscar por provincia + departamento
                   if (!ubigeoEncontrado) {
-                    ubigeoEncontrado = ubigeos.find(u => {
+                ubigeoEncontrado = ubigeosDisponibles.find(u => {
                       const provinciaMatch = resp.datosApi?.provincia && 
-                        u.provincia?.toLowerCase() === resp.datosApi.provincia.toLowerCase();
+                    u.provincia?.toLowerCase().trim() === resp.datosApi.provincia.toLowerCase().trim();
                       const departamentoMatch = resp.datosApi?.departamento && 
-                        u.distrito?.toLowerCase() === resp.datosApi.departamento.toLowerCase();
+                    u.distrito?.toLowerCase().trim() === resp.datosApi.departamento.toLowerCase().trim();
                       return provinciaMatch && departamentoMatch;
                     });
                   }
 
                   // Si aún no hay coincidencia, usar el primero que tenga la provincia correcta
                   if (!ubigeoEncontrado && resp.datosApi?.provincia) {
-                    ubigeoEncontrado = ubigeos.find(u => 
-                      u.provincia?.toLowerCase() === resp.datosApi.provincia.toLowerCase()
+                ubigeoEncontrado = ubigeosDisponibles.find(u => 
+                  u.provincia?.toLowerCase().trim() === resp.datosApi.provincia.toLowerCase().trim()
                     );
-                  }
-
-                  // Si no hay ninguna coincidencia, usar el primero de la lista
-                  if (!ubigeoEncontrado) {
-                    ubigeoEncontrado = ubigeos[0];
                   }
                   
                   // Solo seleccionar ubigeo si el documento es válido (solo para RUC y DNI)
@@ -662,15 +668,40 @@ export class AddClienteComponent implements OnInit, OnDestroy {
                     const patron = tipo === 'ruc' ? /^\d{11}$/ : /^\d{8}$/;
                     const esValido = documentoLimpio.length === longitudEsperada && patron.test(documentoLimpio);
                     
-                    if (documentoControl?.valid && esValido) {
+                    if (documentoControl?.valid && esValido && ubigeoEncontrado) {
                       this.seleccionarUbigeo(ubigeoEncontrado);
                     }
                   } else {
                     // Para otros tipos, solo validar que el control sea válido
                     const documentoControl = this.formCliente.get('ruc');
-                    if (documentoControl?.valid) {
+                    if (documentoControl?.valid && ubigeoEncontrado) {
                       this.seleccionarUbigeo(ubigeoEncontrado);
                     }
+                  }
+            } else {
+              // Si no se han cargado los ubigeos todavía, intentar con búsqueda
+              const busquedaUbigeo = resp.datosApi.distrito || resp.datosApi.provincia || resp.datosApi.departamento || '';
+              this.pedidosService.getSearchUbigeo(busquedaUbigeo).subscribe({
+                next: (ubigeos) => {
+                  // Si se encuentra un ubigeo que coincida, establecerlo
+                  if (ubigeos && ubigeos.length > 0) {
+                    let ubigeoEncontrado = ubigeos[0];
+                    
+                    // Intentar encontrar el mejor match
+                    ubigeoEncontrado = ubigeos.find(u => {
+                      const distritoMatch = resp.datosApi?.distrito && 
+                        u.departamento?.toLowerCase().trim() === resp.datosApi.distrito.toLowerCase().trim();
+                      const provinciaMatch = resp.datosApi?.provincia && 
+                        u.provincia?.toLowerCase().trim() === resp.datosApi.provincia.toLowerCase().trim();
+                      const departamentoMatch = resp.datosApi?.departamento && 
+                        u.distrito?.toLowerCase().trim() === resp.datosApi.departamento.toLowerCase().trim();
+                      
+                      return distritoMatch && provinciaMatch && departamentoMatch;
+                    }) || ubigeos[0];
+                    
+                    const documentoControl = this.formCliente.get('ruc');
+                    if (documentoControl?.valid && ubigeoEncontrado) {
+                      this.seleccionarUbigeo(ubigeoEncontrado);
                   }
                 }
               },
@@ -678,20 +709,22 @@ export class AddClienteComponent implements OnInit, OnDestroy {
                 // Si falla la búsqueda de ubigeo, no es crítico
               }
             });
+            }
           } else if (resp.datosApi.ubigeo) {
             // Si el API devuelve directamente el código de ubigeo
-            this.formCliente.patchValue({
-              ubigeo: resp.datosApi.ubigeo,
-            });
+            const ubigeoPorCodigo = this.ubigeos().find(u => u.ubigeo === resp.datosApi.ubigeo);
+            if (ubigeoPorCodigo) {
+              this.seleccionarUbigeo(ubigeoPorCodigo);
+            }
           }
 
           Swal.fire({
             title: 'Datos obtenidos',
-            text: 'Los datos del cliente se han cargado automáticamente desde el API externo.',
+            text: 'Los datos del cliente se han cargado desde el API SUNAT.',
             icon: 'success',
             confirmButtonColor: '#17a2b8',
             confirmButtonText: 'Ok',
-            timer: 2000,
+            timer: 1800,
             showConfirmButton: true,
           });
         } else {
@@ -711,6 +744,8 @@ export class AddClienteComponent implements OnInit, OnDestroy {
     this.userService.getDataUserLogin().subscribe({
       next: (resp) => {
         this.usuario.set(resp);
+        // Cargar el nombre del vendedor después de obtener el usuario
+        this.cargarNombreVendedor();
         this.spinner.hide('create_usuario');
       },
       error: (err) => {
@@ -723,6 +758,54 @@ export class AddClienteComponent implements OnInit, OnDestroy {
         });
       },
     });
+  }
+
+  getVendedores(): void {
+    this.pedidosService.getVendedores().subscribe({
+      next: (vendedores) => {
+        console.log('getVendedores - vendedores recibidos:', vendedores);
+        this.vendedores.set(vendedores);
+        // Si ya tenemos el usuario cargado, buscar el nombre del vendedor
+        if (this.usuario()?.codVendedor !== undefined && this.usuario()?.codVendedor !== null) {
+          this.cargarNombreVendedor();
+        }
+      },
+      error: (err) => {
+        console.error('Error al obtener vendedores:', err);
+      },
+    });
+  }
+
+  cargarNombreVendedor(): void {
+    const codVendedor = this.usuario()?.codVendedor;
+    console.log('cargarNombreVendedor - codVendedor del usuario:', codVendedor);
+    
+    if (codVendedor !== undefined && codVendedor !== null) {
+      const vendedores = this.vendedores();
+      console.log('cargarNombreVendedor - vendedores disponibles:', vendedores?.length);
+      
+      if (vendedores && vendedores.length > 0) {
+        // Buscar el vendedor por IDVENDEDOR (campo vendedor en el modelo)
+        const vendedor = vendedores.find(v => v.vendedor === codVendedor);
+        console.log('cargarNombreVendedor - vendedor encontrado:', vendedor);
+        
+        if (vendedor) {
+          this.nombreVendedor.set(vendedor.nombre);
+          console.log('cargarNombreVendedor - nombre vendedor asignado:', vendedor.nombre);
+        } else {
+          console.warn('cargarNombreVendedor - No se encontró vendedor con código:', codVendedor);
+          this.nombreVendedor.set('Vendedor no encontrado');
+        }
+      } else {
+        // Si aún no se han cargado los vendedores, esperar un poco y volver a intentar
+        setTimeout(() => {
+          this.cargarNombreVendedor();
+        }, 500);
+      }
+    } else {
+      console.warn('cargarNombreVendedor - No hay código de vendedor en el usuario');
+      this.nombreVendedor.set('');
+    }
   }
 
   getEmpresa(): void {
@@ -785,6 +868,17 @@ export class AddClienteComponent implements OnInit, OnDestroy {
           confirmButtonColor: '#17a2b8',
           confirmButtonText: 'Ok',
         });
+      },
+    });
+  }
+
+  getAllUbigeos(): void {
+    this.ubigeoService.getAll().subscribe({
+      next: (resp) => {
+        this.ubigeos.set(resp);
+      },
+      error: (err) => {
+        console.error('Error al obtener ubigeos:', err);
       },
     });
   }
@@ -873,9 +967,16 @@ export class AddClienteComponent implements OnInit, OnDestroy {
     this.saveCliente();
   }
 
-  saveCliente(): void {
-    this.spinner.show();
+  onInputUpperCase(event: Event, controlName: string): void {
+    const input = event.target as HTMLInputElement;
+    const control = this.formCliente.get(controlName);
+    if (control) {
+      const valorUpper = input.value.toUpperCase();
+      control.setValue(valorUpper, { emitEvent: false });
+    }
+  }
 
+  saveCliente(): void {
     // Limpiar y validar el documento según el tipo seleccionado
     const rucControl = this.formCliente.get('ruc');
     const tipoDocControl = this.formCliente.get('tipoDocumento');
@@ -884,7 +985,7 @@ export class AddClienteComponent implements OnInit, OnDestroy {
       this.spinner.hide();
       Swal.fire({
         title: 'Error de validación',
-        text: 'Debe seleccionar un tipo de documento.',
+        html: `<div style="font-size: calc(1em - 2px);">Debe seleccionar un tipo de documento.</div>`,
         icon: 'error',
         confirmButtonColor: '#17a2b8',
         confirmButtonText: 'Ok',
@@ -919,7 +1020,7 @@ export class AddClienteComponent implements OnInit, OnDestroy {
         const mensajeError = `El número de ${nombreTipo} debe tener exactamente ${config.longitudEsperada} ${config.requiereValidacionExacta ? 'dígitos' : 'caracteres'}.`;
         Swal.fire({
           title: 'Error de validación',
-          text: mensajeError,
+          html: `<div style="font-size: calc(1em - 2px);">${mensajeError}</div>`,
           icon: 'error',
           confirmButtonColor: '#17a2b8',
           confirmButtonText: 'Ok',
@@ -936,7 +1037,7 @@ export class AddClienteComponent implements OnInit, OnDestroy {
         }
         Swal.fire({
           title: 'Error de validación',
-          text: 'El número de documento es requerido.',
+          html: `<div style="font-size: calc(1em - 2px);">El número de documento es requerido.</div>`,
           icon: 'error',
           confirmButtonColor: '#17a2b8',
           confirmButtonText: 'Ok',
@@ -945,11 +1046,32 @@ export class AddClienteComponent implements OnInit, OnDestroy {
       }
     }
 
+    // Convertir campos de texto a mayúsculas antes de enviar
+    const formValue = this.formCliente.value;
+    
+    // Si no hay ciudad pero hay ubigeo seleccionado, usar el distrito como ciudad
+    let ciudadValue = formValue.ciudad ? formValue.ciudad.toString().toUpperCase() : '';
+    if (!ciudadValue && this.ubigeo()?.departamento) {
+      // ubigeo.departamento en BD = DISTRITO (real)
+      ciudadValue = this.ubigeo()!.departamento.toUpperCase();
+    }
+    
     const data: NuevoCliente = {
-      ...this.formCliente.value,
+      ...formValue,
       ruc: documentoLimpio, // Usar el documento limpio
+      razon: formValue.razon ? formValue.razon.toString().toUpperCase() : '',
+      direccion: formValue.direccion ? formValue.direccion.toString().toUpperCase() : '',
+      telefono: formValue.telefono ? formValue.telefono.toString().toUpperCase() : '',
+      ciudad: ciudadValue,
+      contacto: formValue.contacto ? formValue.contacto.toString().toUpperCase() : '',
+      telefonoContacto: formValue.telefonoContacto ? formValue.telefonoContacto.toString().toUpperCase() : '',
+      correo: formValue.correo ? formValue.correo.toString().toUpperCase() : '',
       ubigeo: this.ubigeo()?.ubigeo,
+      condicion: formValue.condicion ? formValue.condicion.toString() : '',
     };
+
+    // Crear cliente directamente sin confirmación
+    this.spinner.show();
     this.pedidosService.crearCliente(data).subscribe({
       next: (resp) => {
         if (resp.ok) {
@@ -987,28 +1109,71 @@ export class AddClienteComponent implements OnInit, OnDestroy {
       error: (err) => {
         this.spinner.hide();
         
+        console.log('Error completo:', err);
+        console.log('err.error:', err.error);
+        
         // Mostrar errores de validación específicos si están disponibles
         let mensajeError = 'Ocurrió un error al crear el cliente.';
-        if (err.error && err.error.errors && Array.isArray(err.error.errors)) {
-          const errores = err.error.errors.map((e: any) => {
-            // Formato: { Field: 'campo', Errors: ['mensaje1', 'mensaje2'] }
-            if (e.Errors && Array.isArray(e.Errors)) {
-              const campo = e.Field ? `${e.Field}: ` : '';
-              return `${campo}${e.Errors.join(', ')}`;
+        
+        if (err.error) {
+          // Manejar errores de validación de ModelState (estructura: { success: false, message: "...", errors: [{ field: "...", errors: [...] }] })
+          if (err.error.errors && Array.isArray(err.error.errors)) {
+            const errores: string[] = [];
+            
+            err.error.errors.forEach((e: any) => {
+              // Manejar estructura: { field: "...", errors: [...] }
+              if (e.errors && Array.isArray(e.errors)) {
+                const campo = (e.field || e.Field || '') as string;
+                e.errors.forEach((mensaje: string) => {
+                  if (campo) {
+                    errores.push(`${campo}: ${mensaje}`);
+                  } else {
+                    errores.push(mensaje);
+                  }
+                });
+              }
+              // Manejar estructura alternativa: { Field: "...", Errors: [...] }
+              else if (e.Errors && Array.isArray(e.Errors)) {
+                const campo = (e.Field || e.field || '') as string;
+                e.Errors.forEach((mensaje: string) => {
+                  if (campo) {
+                    errores.push(`${campo}: ${mensaje}`);
+                  } else {
+                    errores.push(mensaje);
+                  }
+                });
             }
-            // Formato alternativo: solo ErrorMessage
-            return e.ErrorMessage || e.Field || e;
-          }).join('\n');
-          mensajeError = `Error de validación:\n${errores}`;
-        } else if (err.error && err.error.message) {
+              // Si tiene ErrorMessage directo
+              else if (typeof e.ErrorMessage === 'string') {
+                errores.push(e.ErrorMessage);
+              }
+              // Si es un string directo
+              else if (typeof e === 'string') {
+                errores.push(e);
+              }
+            });
+            
+            if (errores.length > 0) {
+              mensajeError = errores.join('\n');
+            }
+          }
+          // Manejar mensaje directo del backend
+          else if (err.error.message && typeof err.error.message === 'string') {
           mensajeError = err.error.message;
-        } else if (err.message) {
-          mensajeError = err.message;
+            // Si hay detalle adicional, agregarlo
+            if (err.error.detail && typeof err.error.detail === 'string') {
+              mensajeError += `\n${err.error.detail}`;
+            }
+          }
+          // Si el error es directamente un string
+          else if (typeof err.error === 'string') {
+            mensajeError = err.error;
+          }
         }
 
         Swal.fire({
           title: 'Error al crear el cliente',
-          text: mensajeError,
+          html: `<div style="font-size: calc(1em - 2px);">${mensajeError.replace(/\n/g, '<br>')}</div>`,
           icon: 'error',
           confirmButtonColor: '#17a2b8',
           confirmButtonText: 'Ok',
@@ -1066,5 +1231,11 @@ export class AddClienteComponent implements OnInit, OnDestroy {
       : null;
     this.formCliente.controls['ubigeo'].setValue(valorUbigeo);
     this.ubigeo.set(ubigeo);
+    
+    // Auto-completar Ciudad con la descripción del Distrito (ubigeo.departamento en BD)
+    const ciudadControl = this.formCliente.controls['ciudad'];
+    if (ciudadControl && ubigeo.departamento) {
+      ciudadControl.setValue(ubigeo.departamento.toUpperCase(), { emitEvent: false });
+    }
   }
 }

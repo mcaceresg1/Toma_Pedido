@@ -353,7 +353,7 @@ export class AddPedidoComponent implements OnInit, OnDestroy {
       this.spinner.hide();
       Swal.fire({
         title: 'Error de validación',
-        text: 'Debe incluir al menos un producto en el pedido.',
+        html: `<div style="font-size: calc(1em - 2px);">Debe incluir al menos un producto en el pedido.</div>`,
         icon: 'error',
         confirmButtonColor: '#17a2b8',
         confirmButtonText: 'Ok',
@@ -369,7 +369,7 @@ export class AddPedidoComponent implements OnInit, OnDestroy {
       this.spinner.hide();
       Swal.fire({
         title: 'Error de validación',
-        text: 'El RUC debe tener exactamente 11 dígitos.',
+        html: `<div style="font-size: calc(1em - 2px);">El RUC debe tener exactamente 11 dígitos.</div>`,
         icon: 'error',
         confirmButtonColor: '#17a2b8',
         confirmButtonText: 'Ok',
@@ -380,7 +380,7 @@ export class AddPedidoComponent implements OnInit, OnDestroy {
     const productos: ProductoNuevoPedido[] = this.listProdAgregados.map(
       (item, index) => {
         return {
-          codProd: item.codProducto,
+          codProd: String(item.codProducto), // Convertir explícitamente a string
           cantProd: item.cantidad,
           preUnit: item.precio / item.cantidad, // precio unitario sin igv
           igv: item.igv,
@@ -388,8 +388,8 @@ export class AddPedidoComponent implements OnInit, OnDestroy {
           numSec: index + 1,
           impUnit: item.importe / item.cantidad, // precio unitario con Igv
           impTot: item.importe, // precio total con Igv
-          almacen: item.almacen,
-          descripcion: item.descProducto,
+          almacen: Number(item.almacen), // Asegurar que sea número
+          descripcion: String(item.descProducto || ''), // Asegurar que sea string
         };
       }
     );
@@ -399,15 +399,17 @@ export class AddPedidoComponent implements OnInit, OnDestroy {
 
     const data: NuevoPedido = {
       ruc: rucLimpio,
-      precio: this.formPedido.get('listaPrecios')?.value,
-      moneda: this.formPedido.get('moneda')?.value,
+      precio: this.formPedido.get('listaPrecios')?.value || '',
+      moneda: this.formPedido.get('moneda')?.value || '',
       subtotal: parseFloat(this.calcularSubtotal().toFixed(9)),
       igv: parseFloat(this.calcularIgv().toFixed(9)),
       total: parseFloat(this.calcularTotal().toFixed(9)),
       productos,
-      observaciones: this.formPedido.get('observaciones')?.value,
-      oc: this.formPedido.get('oc')?.value,
+      observaciones: this.formPedido.get('observaciones')?.value || '',
+      oc: this.formPedido.get('oc')?.value || '',
     };
+
+    console.log('Datos a enviar al backend:', JSON.stringify(data, null, 2));
 
     this.pedidos.savePedido(data).subscribe({
       next: (resp) => {
@@ -446,21 +448,69 @@ export class AddPedidoComponent implements OnInit, OnDestroy {
         
         // Mostrar errores de validación específicos si están disponibles
         let mensajeError = 'Ocurrió un error al guardar el pedido.';
-        if (err.error && err.error.errors && Array.isArray(err.error.errors)) {
-          const errores = err.error.errors.map((e: any) => {
-            if (e.Errors && Array.isArray(e.Errors)) {
-              return e.Errors.join(', ');
+        
+        console.log('Error completo:', err);
+        console.log('err.error:', err.error);
+        
+        if (err.error) {
+          // Manejar errores de validación de ModelState (estructura: { success: false, message: "...", errors: [{ field: "...", errors: [...] }] })
+          if (err.error.errors && Array.isArray(err.error.errors)) {
+            const errores: string[] = [];
+            
+            err.error.errors.forEach((e: any) => {
+              // Manejar estructura: { field: "...", errors: [...] }
+              if (e.errors && Array.isArray(e.errors)) {
+                const campo = (e.field || e.Field || '') as string;
+                e.errors.forEach((mensaje: string) => {
+                  if (campo) {
+                    errores.push(`${campo}: ${mensaje}`);
+                  } else {
+                    errores.push(mensaje);
+                  }
+                });
+              }
+              // Manejar estructura alternativa: { Field: "...", Errors: [...] }
+              else if (e.Errors && Array.isArray(e.Errors)) {
+                const campo = (e.Field || e.field || '') as string;
+                e.Errors.forEach((mensaje: string) => {
+                  if (campo) {
+                    errores.push(`${campo}: ${mensaje}`);
+                  } else {
+                    errores.push(mensaje);
+                  }
+                });
+              }
+              // Si tiene ErrorMessage directo
+              else if (typeof e.ErrorMessage === 'string') {
+                errores.push(e.ErrorMessage);
+              }
+              // Si es un string directo
+              else if (typeof e === 'string') {
+                errores.push(e);
+              }
+            });
+            
+            if (errores.length > 0) {
+              mensajeError = errores.join('\n');
             }
-            return e.ErrorMessage || e;
-          }).join('\n');
-          mensajeError = `Error de validación:\n${errores}`;
-        } else if (err.error && err.error.message) {
+          }
+          // Manejar mensaje directo del backend
+          else if (err.error.message && typeof err.error.message === 'string') {
           mensajeError = err.error.message;
+            // Si hay detalle adicional, agregarlo
+            if (err.error.detail && typeof err.error.detail === 'string') {
+              mensajeError += `\n${err.error.detail}`;
+            }
+          }
+          // Si el error es directamente un string
+          else if (typeof err.error === 'string') {
+            mensajeError = err.error;
+          }
         }
 
         Swal.fire({
           title: 'Error al guardar pedido',
-          text: mensajeError,
+          html: `<div style="font-size: calc(1em - 2px);">${mensajeError.replace(/\n/g, '<br>')}</div>`,
           icon: 'error',
           confirmButtonColor: '#17a2b8',
           confirmButtonText: 'Ok',

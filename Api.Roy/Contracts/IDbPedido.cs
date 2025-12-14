@@ -1,4 +1,4 @@
-﻿using ApiRoy.Models;
+using ApiRoy.Models;
 
 namespace ApiRoy.Contracts
 {
@@ -26,5 +26,6 @@ namespace ApiRoy.Contracts
         Task<EcClienteApiResponse?> ObtenerDatosClientePorDni(string dni);
         Task<EcClienteApiResponse?> ConsultarClienteApi(string ruc);
         Task<EcClienteApiResponse?> ConsultarClienteApiPorDni(string dni);
+        void RegistrarEmpresasUsuario(string usuario);
     }
 }

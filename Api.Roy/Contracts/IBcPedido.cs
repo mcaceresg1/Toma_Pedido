@@ -1,4 +1,4 @@
-﻿namespace ApiRoy.Contracts
+namespace ApiRoy.Contracts
 {
     using ApiRoy.Models;
 
@@ -22,5 +22,6 @@
         Task<List<EcFiltroVendedor>> GetVendedores();
         Task<EcConsultaClienteResponse> ConsultarClientePorRuc(string ruc);
         Task<EcConsultaClienteResponse> ConsultarClientePorDni(string dni);
+        void RegistrarEmpresasUsuario(string usuario);
     }
 }

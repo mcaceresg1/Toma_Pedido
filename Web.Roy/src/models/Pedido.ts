@@ -47,7 +47,7 @@ export type ProductoPedido = {
 export type NuevoPedido = {
   ruc: string;
   precio: string;
-  moneda: number;
+  moneda: string;
   subtotal: number;
   igv: number;
   total: number;

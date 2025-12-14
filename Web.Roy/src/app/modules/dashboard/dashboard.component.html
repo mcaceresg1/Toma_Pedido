@@ -194,7 +194,7 @@
               </mat-icon>
               {{ item.nombre }}
             </button>
-            <button mat-menu-item (click)="logout()">
+            <button mat-menu-item (click)="logout($event); $event.stopPropagation()">
               <mat-icon>logout</mat-icon>Cerrar Sesión
             </button>
           </mat-menu>

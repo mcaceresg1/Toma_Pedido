@@ -188,14 +188,28 @@ BEGIN
     -- Calcular totales solo sobre las filas filtradas
     TBL_CON_TOTAL AS (
         SELECT 
-            *,
-            COUNT(*) OVER() AS TOTAL
+            OPERACION,
+            FECHA,
+            RUC,
+            IDVENDEDOR,
+            BASE,
+            IMPUESTO,
+            TOTAL AS IMP_TTOT,
+            ORDEN_COMPRA,
+            FACTURA,
+            OBSERVACIONES,
+            RAZON,
+            DIRECCION,
+            MONEDA,
+            ABR_MONEDA,
+            SWT_PED_CALC,
+            COUNT(*) OVER() AS TOTAL_REGISTROS
         FROM TBL_PEDIDOS_FILTRADOS
     ),
     -- Aplicar numeración de filas
     TBL_PEDIDOS AS (
         SELECT 
-            TOTAL,
+            TOTAL_REGISTROS AS TOTAL,
             ROW_NUMBER() OVER (ORDER BY FECHA DESC, OPERACION DESC) AS ITEM,
             RTRIM(OPERACION) AS NUM_PED,
             FORMAT(CONVERT(datetime, FECHA, 121), ''yyyy-MM-dd'') AS FEC_PED,
@@ -207,7 +221,7 @@ BEGIN
             RTRIM(IDVENDEDOR) AS CDG_VEND,
             BASE AS IMP_STOT,
             IMPUESTO AS IMP_IGV,
-            TOTAL AS IMP_TTOT,
+            IMP_TTOT AS IMP_TTOT,
             CASE 
                 WHEN SWT_PED_CALC IS NOT NULL THEN SWT_PED_CALC
                 ELSE dbo.ESTADO_PEDIDO(@CURRENT_DB_IN, OPERACION)

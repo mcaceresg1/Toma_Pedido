@@ -14,13 +14,15 @@ namespace ApiRoy.Controllers
     public class LoginController : Controller
     {
         private readonly IBcLogin _bcLogin;
+        private readonly IBcPedido _bcPedido;
         private readonly IConfiguration _config;
         private readonly ILogger<LoginController> _logger;
         private readonly IWebHostEnvironment _environment;
 
-        public LoginController(IBcLogin login, IConfiguration configuration, ILogger<LoginController> logger, IWebHostEnvironment environment)
+        public LoginController(IBcLogin login, IBcPedido bcPedido, IConfiguration configuration, ILogger<LoginController> logger, IWebHostEnvironment environment)
         {
             _bcLogin = login;
+            _bcPedido = bcPedido;
             _config = configuration;
             _logger = logger;
             _environment = environment;
@@ -84,14 +86,28 @@ namespace ApiRoy.Controllers
             if (string.IsNullOrEmpty(connectionString))
                 return "N/A";
             
-            // Buscar "Initial Catalog=" o "Database=" (ambos formatos)
+            // Si contiene valores placeholder, retornar N/A
+            if (connectionString.Contains("USAR_VARIABLES_DE_ENTORNO") || 
+                connectionString.Contains("CONFIGURAR_EN_USER_SECRETS") ||
+                connectionString.Contains("CONFIGURAR"))
+            {
+                return "N/A (No configurado)";
+            }
+            
+            // Buscar "Initial Catalog=" o "Database=" (ambos formatos), permitiendo espacios
             var match = System.Text.RegularExpressions.Regex.Match(
                 connectionString, 
-                @"(?:initial catalog|database)=([^;]+)", 
+                @"(?:initial\s+catalog|database)\s*=\s*([^;]+)", 
                 System.Text.RegularExpressions.RegexOptions.IgnoreCase
             );
             
-            return match.Success ? match.Groups[1].Value : "N/A";
+            if (match.Success)
+            {
+                var dbName = match.Groups[1].Value.Trim();
+                return string.IsNullOrEmpty(dbName) ? "N/A" : dbName;
+            }
+            
+            return "N/A";
         }
 
         [HttpPost]
@@ -116,6 +132,17 @@ namespace ApiRoy.Controllers
                 
                 var token = GenerateToken(ecLogin);
                 _logger.LogInformation("Login exitoso para usuario: {Usuario}", ecLogin.Usuario);
+                
+                // Registrar empresas del usuario después del login exitoso
+                try
+                {
+                    _bcPedido.RegistrarEmpresasUsuario(ecLogin.Usuario);
+                }
+                catch (Exception ex)
+                {
+                    // No interrumpir el login si falla el log de empresas
+                    _logger.LogWarning(ex, "No se pudo registrar información de empresas para usuario: {Usuario}", ecLogin.Usuario);
+                }
                 
                 return StatusCode(200, new
                 {

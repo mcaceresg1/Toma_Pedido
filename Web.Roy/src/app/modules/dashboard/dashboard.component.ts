@@ -54,7 +54,7 @@ export class DashboardComponent implements OnInit {
   userEmpresas = signal<Empresa[]>([]);
   _snackbar = inject(MatSnackBar);
   mostrarImpuesto = signal<boolean>(false);
-  appVersion: string = '2.2.0';
+  appVersion: string = '2.2.2';
   
   // Estados de expansión de menús
   ventasExpanded: boolean = false;
@@ -246,7 +246,13 @@ export class DashboardComponent implements OnInit {
   //   return permiso;
   // }
 
-  logout() {
+  logout($event?: Event) {
+    // Prevenir propagación de eventos si se proporciona
+    if ($event) {
+      $event.preventDefault();
+      $event.stopPropagation();
+    }
+    
     Swal.fire({
       title: '¿Está seguro de cerrar sesión?',
       icon: 'warning',

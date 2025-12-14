@@ -132,6 +132,8 @@
             placeholder="Razón Social"
             value=""
             formControlName="razon"
+            (input)="onInputUpperCase($event, 'razon')"
+            style="text-transform: uppercase;"
           />
 
           @if (formCliente.controls["razon"].getError("required")) {
@@ -152,6 +154,8 @@
             data-autocomplete="off"
             name="direccion-cliente"
             type="text"
+            (input)="onInputUpperCase($event, 'direccion')"
+            style="text-transform: uppercase;"
           />
           <mat-icon matPrefix>map</mat-icon>
 
@@ -161,32 +165,44 @@
         </mat-form-field>
 
         <mat-form-field class="!w-full !h-fit" appearance="outline">
+          <mat-label>Ubigeo</mat-label>
+          <input
+            matInput
+            placeholder="Ubigeo"
+            value=""
+            formControlName="ubigeo"
+            [readonly]="true"
+            (click)="openUbigeoDialog()"
+          />
+          <mat-icon matPrefix>place</mat-icon>
+          @if (formCliente.controls["ubigeo"].getError("required")) {
+          <mat-error>El campo ubigeo es requerido.</mat-error>
+          }
+          <button
+            matSuffix
+            mat-flat-button
+            class="mr-2"
+            (click)="openUbigeoDialog()"
+          >
+            <mat-icon>search</mat-icon>
+            Buscar
+          </button>
+        </mat-form-field>
+
+        <mat-form-field class="!w-full !h-fit" appearance="outline">
           <mat-label>Teléfono</mat-label>
           <input
             matInput
             placeholder="Teléfono"
             value=""
             formControlName="telefono"
+            (input)="onInputUpperCase($event, 'telefono')"
+            style="text-transform: uppercase;"
           />
           <mat-icon matPrefix>phone</mat-icon>
 
           @if (formCliente.controls["telefono"].getError("required")) {
           <mat-error>Escriba el teléfono del cliente.</mat-error>
-          }
-        </mat-form-field>
-
-        <mat-form-field class="!w-full !h-fit" appearance="outline">
-          <mat-label>Ciudad</mat-label>
-          <input
-            matInput
-            placeholder="Ciudad"
-            value=""
-            formControlName="ciudad"
-          />
-          <mat-icon matPrefix>location_city</mat-icon>
-
-          @if (formCliente.controls["ciudad"].getError("required")) {
-          <mat-error>El campo ciudad es requerido.</mat-error>
           }
         </mat-form-field>
 
@@ -197,6 +213,8 @@
             placeholder="Contacto"
             value=""
             formControlName="contacto"
+            (input)="onInputUpperCase($event, 'contacto')"
+            style="text-transform: uppercase;"
           />
           <mat-icon matPrefix>person</mat-icon>
 
@@ -212,6 +230,8 @@
             placeholder="Teléfono Contacto"
             value=""
             formControlName="telefonoContacto"
+            (input)="onInputUpperCase($event, 'telefonoContacto')"
+            style="text-transform: uppercase;"
           />
           <mat-icon matPrefix>phone</mat-icon>
         </mat-form-field>
@@ -241,34 +261,28 @@
             placeholder="Correo"
             value=""
             formControlName="correo"
+            (input)="onInputUpperCase($event, 'correo')"
+            style="text-transform: uppercase;"
           />
           <mat-icon matPrefix>mail</mat-icon>
         </mat-form-field>
 
         <mat-form-field class="!w-full !h-fit" appearance="outline">
-          <mat-label>Ubigeo</mat-label>
+          <mat-label>Vendedor</mat-label>
           <input
             matInput
-            placeholder="Ubigeo"
-            value=""
-            formControlName="ubigeo"
+            placeholder="Vendedor"
+            [value]="nombreVendedor()"
             [readonly]="true"
-            (click)="openUbigeoDialog()"
           />
-          <mat-icon matPrefix>place</mat-icon>
-          @if (formCliente.controls["ubigeo"].getError("required")) {
-          <mat-error>El campo ubigeo es requerido.</mat-error>
-          }
-          <button
-            matSuffix
-            mat-flat-button
-            class="mr-2"
-            (click)="openUbigeoDialog()"
-          >
-            <mat-icon>search</mat-icon>
-            Buscar
-          </button>
+          <mat-icon matPrefix>person</mat-icon>
         </mat-form-field>
+
+        <!-- Campo ciudad oculto pero presente en el formulario -->
+        <input
+          type="hidden"
+          formControlName="ciudad"
+        />
 
         <mat-form-field appearance="outline">
           <mat-select formControlName="condicion">

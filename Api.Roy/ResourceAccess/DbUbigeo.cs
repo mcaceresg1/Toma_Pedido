@@ -43,11 +43,9 @@ namespace ApiRoy.ResourceAccess
                     };
                 }
 
-                List<DbParametro> parametros = new List<DbParametro>
-                {
-                    new DbParametro("@ZonaFiltro", SqlDbType.VarChar, ParameterDirection.Input, 
-                        string.IsNullOrEmpty(zonaFiltro) ? (object)DBNull.Value : zonaFiltro, 3)
-                };
+                // El procedimiento NX_Ubigeo_GetAll no acepta parámetros
+                // Si en el futuro necesita zonaFiltro, se deberá modificar el stored procedure
+                List<DbParametro>? parametros = null;
                 
                 return dbData.ObtieneLista("NX_Ubigeo_GetAll", GetItem, parametros);
             });

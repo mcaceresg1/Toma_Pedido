@@ -44,7 +44,7 @@ export class LoginPageComponent implements OnInit {
   errorSession: boolean = false;
 
   // Información del sistema
-  appVersion: string = '2.2.0';
+  appVersion: string = '2.2.2';
   environmentInfo = {
     ambiente: 'Cargando...',
     bdLogin: '',
