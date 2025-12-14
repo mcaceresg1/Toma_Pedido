@@ -181,7 +181,7 @@ REM Script Backend
 REM Script Frontend
 (
     echo @echo off
-    echo title Frontend - Toma Pedidos
+    echo title Frontend - Toma Pedido
     echo cd /d "%ROOT_DIR%\Web.Roy"
     echo set NG_CLI_ANALYTICS=false
     echo echo.
@@ -191,8 +191,8 @@ REM Script Frontend
     echo echo.
     echo echo URL: http://localhost:4200
     echo echo.
-    echo npm start
-    echo title Frontend - Toma Pedidos
+    echo title Frontend - Toma Pedido
+    echo call npm start
 ) > "%FRONTEND_SCRIPT%"
 
 echo Scripts creados
@@ -210,7 +210,7 @@ echo Esperando 5 segundos...
 timeout /t 5 /nobreak >nul
 
 echo Iniciando Frontend...
-start "Frontend - Toma Pedidos" cmd /k "%FRONTEND_SCRIPT%"
+start "Frontend - Toma Pedido" cmd /k "%FRONTEND_SCRIPT%"
 
 echo.
 echo ============================================
