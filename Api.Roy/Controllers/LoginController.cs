@@ -195,16 +195,9 @@ namespace ApiRoy.Controllers
             };
             var secretKey = _config.GetSection("JWT:SECRET_KEY").Value ?? throw new InvalidOperationException("JWT Secret Key no configurada");
             
-            // Validar tamaño de clave para HmacSha512 (mínimo 64 bytes = 512 bits)
             var keyBytes = Encoding.UTF8.GetBytes(secretKey);
-            if (keyBytes.Length < 64)
-            {
-                _logger.LogError("JWT SECRET_KEY es demasiado corta. Longitud actual: {Length} bytes. Se requiere mínimo 64 bytes (512 bits) para HmacSha512Signature", keyBytes.Length);
-                throw new InvalidOperationException($"JWT SECRET_KEY debe tener al menos 64 bytes (512 bits). Longitud actual: {keyBytes.Length} bytes");
-            }
-            
             var key = new SymmetricSecurityKey(keyBytes);
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
             
             // Leer tiempo de expiración desde configuración
             var expireMinutesStr = _config.GetSection("JWT:JWT_EXPIRE_MINUTES").Value ?? "120";

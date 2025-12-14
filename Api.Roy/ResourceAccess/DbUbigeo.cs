@@ -3,7 +3,9 @@ namespace ApiRoy.ResourceAccess
     using ApiRoy.Contracts;
     using ApiRoy.Models;
     using ApiRoy.ResourceAccess.Database;
+    using System;
     using System.Data;
+    using Microsoft.Data.SqlClient;
 
     public class DbUbigeo : IDbUbigeo
     {
@@ -33,22 +35,57 @@ namespace ApiRoy.ResourceAccess
             {
                 EcUbigeo GetItem(DataRow r)
                 {
+                    // El stored procedure devuelve las columnas con alias: Ubigeo, Distrito, Provincia, Departamento, Zona
                     return new EcUbigeo
                     {
                         Ubigeo = r["Ubigeo"]?.ToString() ?? string.Empty,
                         Distrito = r["Distrito"]?.ToString() ?? string.Empty,
                         Provincia = r["Provincia"]?.ToString() ?? string.Empty,
                         Departamento = r["Departamento"]?.ToString() ?? string.Empty,
-                        Zona = r["Zona"]?.ToString()
+                        Zona = GetColumnValueCaseInsensitive(r, "Zona")
                     };
                 }
 
-                // El procedimiento NX_Ubigeo_GetAll no acepta parámetros
-                // Si en el futuro necesita zonaFiltro, se deberá modificar el stored procedure
+                // El procedimiento NX_Ubigeo_GetAll acepta el parámetro @ZonaFiltro (opcional)
                 List<DbParametro>? parametros = null;
+                if (!string.IsNullOrEmpty(zonaFiltro))
+                {
+                    parametros = new List<DbParametro>
+                    {
+                        new DbParametro("@ZonaFiltro", SqlDbType.VarChar, ParameterDirection.Input, zonaFiltro, 3)
+                    };
+                }
                 
                 return dbData.ObtieneLista("NX_Ubigeo_GetAll", GetItem, parametros);
             });
+        }
+
+        private string? GetColumnValueCaseInsensitive(DataRow row, string columnName)
+        {
+            try
+            {
+                // Intentar acceder directamente (SQL Server generalmente es case-insensitive para nombres de columna)
+                if (row.Table.Columns.Contains(columnName))
+                {
+                    var value = row[columnName];
+                    return value == DBNull.Value ? null : value?.ToString();
+                }
+                
+                // Si no se encuentra con el caso exacto, buscar case-insensitive en todas las columnas
+                foreach (DataColumn col in row.Table.Columns)
+                {
+                    if (string.Equals(col.ColumnName, columnName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        var value = row[col.ColumnName];
+                        return value == DBNull.Value ? null : value?.ToString();
+                    }
+                }
+            }
+            catch
+            {
+                // Si hay algún error, retornar null
+            }
+            return null;
         }
 
         public Task<List<string>> GetByZona(string zonaCodigo, string usuario)

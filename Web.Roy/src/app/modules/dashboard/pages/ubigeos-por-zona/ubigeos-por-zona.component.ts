@@ -42,7 +42,7 @@ export class UbigeosPorZonaComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadZonas();
-    this.loadUbigeos();
+    // No cargar ubigeos aquí, se cargarán después de seleccionar la zona
   }
 
   // ========== ZONAS ==========
@@ -56,7 +56,11 @@ export class UbigeosPorZonaComponent implements OnInit {
         if (zonas.length > 0 && !this.zonaSeleccionada) {
           this.zonaSeleccionada = zonas[0].zonaCodigo;
           this.establecerFiltroPorZona();
-          this.loadUbigeosByZona();
+          // Cargar ubigeos primero (con la zona seleccionada para ordenamiento)
+          // Luego cargar los ubigeos seleccionados de esa zona
+          this.loadUbigeos(() => {
+            this.loadUbigeosByZona();
+          });
         }
         this.loading = false;
       },
@@ -68,7 +72,7 @@ export class UbigeosPorZonaComponent implements OnInit {
   }
 
   // ========== UBIGEOS POR ZONA ==========
-  loadUbigeos(): void {
+  loadUbigeos(callback?: () => void): void {
     this.loading = true;
     this.error = null;
     // Pasar zona seleccionada para ordenamiento optimizado en backend
@@ -79,10 +83,18 @@ export class UbigeosPorZonaComponent implements OnInit {
         // Aplicar solo filtro de búsqueda
         this.filtrarUbigeos();
         this.loading = false;
+        // Ejecutar callback si se proporcionó
+        if (callback) {
+          callback();
+        }
       },
       error: (err) => {
         this.error = 'Error al cargar ubigeos: ' + (err.error?.message || err.message);
         this.loading = false;
+        // Ejecutar callback incluso en caso de error
+        if (callback) {
+          callback();
+        }
       }
     });
   }
@@ -91,11 +103,16 @@ export class UbigeosPorZonaComponent implements OnInit {
     if (this.zonaSeleccionada) {
       // Establecer filtro según la descripción de la zona
       this.establecerFiltroPorZona();
-      this.loadUbigeosByZona();
+      // Recargar ubigeos con la nueva zona seleccionada para obtener información actualizada
+      // Luego cargar los ubigeos seleccionados de esa zona
+      this.loadUbigeos(() => {
+        this.loadUbigeosByZona();
+      });
     } else {
       this.ubigeosSeleccionados.clear();
       this.filtroUbigeo = '';
-      this.filtrarUbigeos();
+      // Recargar ubigeos sin zona
+      this.loadUbigeos();
     }
   }
 
