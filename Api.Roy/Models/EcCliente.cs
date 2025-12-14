@@ -16,7 +16,7 @@ namespace ApiRoy.Models
         public string Razon { get; set; } = string.Empty;
         
         [Required(ErrorMessage = "El documento es requerido")]
-        [RegularExpression(@"^(\d{8}|\d{11})$", ErrorMessage = "El documento debe tener 8 dígitos (DNI) o 11 dígitos (RUC)")]
+        [RegularExpression(@"^[\d\w]{1,20}$", ErrorMessage = "El documento debe tener entre 1 y 20 caracteres alfanuméricos")]
         public string Ruc { get; set; } = string.Empty;
         
         [Required(ErrorMessage = "La dirección es requerida")]

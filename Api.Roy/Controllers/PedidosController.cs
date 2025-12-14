@@ -175,29 +175,60 @@
                 var user = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
                 if (user == null) { return Unauthorized(); }
 
-                // Extraer solo dígitos
-                var documentoLimpio = new string(documento.Where(char.IsDigit).ToArray());
-
-                // Determinar si es RUC (11 dígitos) o DNI (8 dígitos)
-                if (documentoLimpio.Length == 11)
+                // Limpiar documento (solo alfanuméricos, hasta 20 caracteres)
+                var documentoLimpio = new string(documento.Where(c => char.IsLetterOrDigit(c)).ToArray());
+                
+                if (string.IsNullOrEmpty(documentoLimpio) || documentoLimpio.Length == 0 || documentoLimpio.Length > 20)
                 {
-                    // Es RUC
+                    return StatusCode(StatusCodes.Status400BadRequest, new
+                    {
+                        ok = false,
+                        message = "El documento debe tener entre 1 y 20 caracteres alfanuméricos"
+                    });
+                }
+
+                // Determinar si es RUC (11 dígitos) o DNI (8 dígitos) para consultar APIs externas
+                // Para otros tipos de documento, solo se consultará en la base de datos
+                if (documentoLimpio.Length == 11 && documentoLimpio.All(char.IsDigit))
+                {
+                    // Es RUC - consultar API externa
                     var response = await _bcPedido.ConsultarClientePorRuc(documentoLimpio);
                     return StatusCode(StatusCodes.Status200OK, response);
                 }
-                else if (documentoLimpio.Length == 8)
+                else if (documentoLimpio.Length == 8 && documentoLimpio.All(char.IsDigit))
                 {
-                    // Es DNI
+                    // Es DNI - consultar API externa
                     var response = await _bcPedido.ConsultarClientePorDni(documentoLimpio);
                     return StatusCode(StatusCodes.Status200OK, response);
                 }
                 else
                 {
-                    return StatusCode(StatusCodes.Status400BadRequest, new
+                    // Otro tipo de documento (Carnet Extranjería, Pasaporte, etc.)
+                    // Solo buscar en la base de datos, no hay APIs externas disponibles para estos tipos
+                    // Reutilizar ValidarDniExiste que busca por RUC (que es donde se almacena cualquier documento)
+                    var existeEnBD = await _bcPedido.ValidarDniExiste(documentoLimpio);
+                    if (existeEnBD)
                     {
-                        ok = false,
-                        message = "El documento debe tener 11 dígitos (RUC) o 8 dígitos (DNI)"
-                    });
+                        // Obtener datos del cliente desde la BD
+                        var datosCliente = await _bcPedido.ObtenerDatosClientePorDni(documentoLimpio);
+                        return StatusCode(StatusCodes.Status200OK, new
+                        {
+                            existeEnBD = true,
+                            datosApi = datosCliente,
+                            mensaje = datosCliente != null 
+                                ? $"El documento ya es cliente\n\nNombre: {datosCliente.Nombre ?? datosCliente.RazonSocial ?? "N/A"}\nDirección: {datosCliente.Direccion ?? "N/A"}"
+                                : "El documento ya existe en la base de datos"
+                        });
+                    }
+                    else
+                    {
+                        return StatusCode(StatusCodes.Status200OK, new
+                        {
+                            existeEnBD = false,
+                            datosApi = (object?)null,
+                            mensaje = "El documento no existe en la base de datos. Debe crear el cliente manualmente."
+                        });
+                    }
                 }
             }
             catch (Exception ex)

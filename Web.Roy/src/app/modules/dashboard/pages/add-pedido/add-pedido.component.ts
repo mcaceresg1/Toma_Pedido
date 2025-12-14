@@ -361,15 +361,24 @@ export class AddPedidoComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Extraer y limpiar el RUC (solo números, máximo 11 dígitos)
+    // Extraer el documento del cliente seleccionado
     const rucRaw = this.formPedido.get('cliente')?.value || '';
-    const rucLimpio = rucRaw.toString().replace(/\D/g, '').substring(0, 11);
+    let documentoLimpio = rucRaw.toString();
 
-    if (rucLimpio.length !== 11) {
+    // Extraer solo el número/documento (eliminar descripción si existe, formato: "12345678 | NOMBRE")
+    const partes = documentoLimpio.split('|');
+    if (partes.length > 1) {
+      documentoLimpio = partes[0].trim();
+    } else {
+      documentoLimpio = documentoLimpio.trim();
+    }
+
+    // Validar que el documento no esté vacío y tenga entre 1 y 20 caracteres
+    if (!documentoLimpio || documentoLimpio.length === 0 || documentoLimpio.length > 20) {
       this.spinner.hide();
       Swal.fire({
         title: 'Error de validación',
-        html: `<div style="font-size: calc(1em - 2px);">El RUC debe tener exactamente 11 dígitos.</div>`,
+        html: `<div style="font-size: calc(1em - 2px);">El documento del cliente es requerido y debe tener entre 1 y 20 caracteres.</div>`,
         icon: 'error',
         confirmButtonColor: '#17a2b8',
         confirmButtonText: 'Ok',
@@ -395,10 +404,10 @@ export class AddPedidoComponent implements OnInit, OnDestroy {
     );
 
     console.log('Productos: ', productos);
-    console.log('RUC limpio: ', rucLimpio);
+    console.log('Documento limpio: ', documentoLimpio);
 
     const data: NuevoPedido = {
-      ruc: rucLimpio,
+      ruc: documentoLimpio,
       precio: this.formPedido.get('listaPrecios')?.value || '',
       moneda: this.formPedido.get('moneda')?.value || '',
       subtotal: parseFloat(this.calcularSubtotal().toFixed(9)),

@@ -415,6 +415,16 @@ namespace ApiRoy.Services
             }
         }
 
+        public async Task<bool> ValidarDniExiste(string dni)
+        {
+            return await _dbPedido.ValidarDniExiste(dni);
+        }
+
+        public async Task<EcClienteApiResponse?> ObtenerDatosClientePorDni(string dni)
+        {
+            return await _dbPedido.ObtenerDatosClientePorDni(dni);
+        }
+
         public void RegistrarEmpresasUsuario(string usuario)
         {
             try

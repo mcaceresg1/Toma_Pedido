@@ -251,21 +251,27 @@ export class DashboardComponent implements OnInit {
     if ($event) {
       $event.preventDefault();
       $event.stopPropagation();
+      $event.stopImmediatePropagation();
     }
     
-    Swal.fire({
-      title: '¿Está seguro de cerrar sesión?',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#17a2b8',
-      cancelButtonColor: '#343a40',
-      confirmButtonText: 'Confirmar',
-      cancelButtonText: 'Cancelar',
-    }).then((result) => {
-      if (result.isConfirmed) {
-        this.authService.logout();
-      }
-    });
+    // Usar setTimeout para evitar conflictos con mat-menu
+    setTimeout(() => {
+      Swal.fire({
+        title: '¿Está seguro de cerrar sesión?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#17a2b8',
+        cancelButtonColor: '#343a40',
+        confirmButtonText: 'Confirmar',
+        cancelButtonText: 'Cancelar',
+        allowOutsideClick: false,
+        allowEscapeKey: true,
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.authService.logout();
+        }
+      });
+    }, 0);
   }
 
   @HostListener('window:resize', ['$event'])

@@ -1543,12 +1543,14 @@ namespace ApiRoy.ResourceAccess
 
         public async Task<EcClienteApiResponse?> ConsultarClienteApi(string ruc)
         {
-            // Extraer solo dígitos del RUC
-            var rucLimpio = new string(ruc.Where(char.IsDigit).ToArray());
+            // Limpiar el documento (remover espacios y caracteres especiales según el tipo)
+            // Para compatibilidad, mantener solo caracteres alfanuméricos, permitir hasta 20 caracteres
+            var rucLimpio = new string(ruc.Where(c => char.IsLetterOrDigit(c)).ToArray());
             
-            if (string.IsNullOrEmpty(rucLimpio) || rucLimpio.Length != 11)
+            // Validar que el documento no esté vacío y tenga entre 1 y 20 caracteres
+            if (string.IsNullOrEmpty(rucLimpio) || rucLimpio.Length == 0 || rucLimpio.Length > 20)
             {
-                _logger.LogWarning("RUC inválido: {Ruc}. Debe tener 11 dígitos.", ruc);
+                _logger.LogWarning("Documento inválido: {Ruc}. Debe tener entre 1 y 20 caracteres alfanuméricos.", ruc);
                 return null;
             }
 

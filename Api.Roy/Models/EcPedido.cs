@@ -4,8 +4,8 @@ namespace ApiRoy.Models
 {
     public class EcNuevoPedido
     {
-        [Required(ErrorMessage = "El RUC es requerido")]
-        [RegularExpression(@"^\d{11}$", ErrorMessage = "El RUC debe tener 11 dígitos")]
+        [Required(ErrorMessage = "El documento del cliente es requerido")]
+        [RegularExpression(@"^[\d\w]{1,20}$", ErrorMessage = "El documento debe tener entre 1 y 20 caracteres alfanuméricos")]
         public string Ruc { get; set; } = string.Empty;
         
         public string? Precio { get; set; }

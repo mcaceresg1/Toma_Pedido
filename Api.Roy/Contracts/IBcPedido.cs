@@ -22,6 +22,8 @@ namespace ApiRoy.Contracts
         Task<List<EcFiltroVendedor>> GetVendedores();
         Task<EcConsultaClienteResponse> ConsultarClientePorRuc(string ruc);
         Task<EcConsultaClienteResponse> ConsultarClientePorDni(string dni);
+        Task<bool> ValidarDniExiste(string dni);
+        Task<EcClienteApiResponse?> ObtenerDatosClientePorDni(string dni);
         void RegistrarEmpresasUsuario(string usuario);
     }
 }

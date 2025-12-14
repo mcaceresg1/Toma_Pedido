@@ -18,6 +18,14 @@ namespace ApiRoy.Middleware
         {
             try
             {
+                // Habilitar buffering del request body para permitir múltiples lecturas
+                // Esto es necesario cuando HttpLogging u otros middlewares leen el body
+                if (context.Request.ContentLength > 0 && 
+                    context.Request.ContentType?.Contains("application/json") == true)
+                {
+                    context.Request.EnableBuffering();
+                }
+                
                 await _next(context);
             }
             catch (Exception exception)
@@ -30,12 +38,22 @@ namespace ApiRoy.Middleware
         {
             var errorId = Guid.NewGuid().ToString();
             
+            // Obtener información adicional del request para debugging
+            var requestPath = context.Request.Path;
+            var requestMethod = context.Request.Method;
+            var contentType = context.Request.ContentType;
+            var contentLength = context.Request.ContentLength;
+            
             _logger.LogError(
                 exception,
-                "Error ID: {ErrorId} - Exception: {ExceptionType} - Message: {Message}",
+                "Error ID: {ErrorId} - Exception: {ExceptionType} - Message: {Message} - Path: {Path} - Method: {Method} - ContentType: {ContentType} - ContentLength: {ContentLength}",
                 errorId,
                 exception.GetType().Name,
-                exception.Message);
+                exception.Message,
+                requestPath,
+                requestMethod,
+                contentType ?? "N/A",
+                contentLength?.ToString() ?? "N/A");
 
             var statusCode = exception switch
             {
@@ -44,15 +62,28 @@ namespace ApiRoy.Middleware
                 InvalidOperationException => HttpStatusCode.BadRequest,
                 UnauthorizedAccessException => HttpStatusCode.Unauthorized,
                 KeyNotFoundException => HttpStatusCode.NotFound,
+                Microsoft.AspNetCore.Server.Kestrel.Core.BadHttpRequestException => HttpStatusCode.BadRequest,
                 _ => HttpStatusCode.InternalServerError
             };
+            
+            // Mensaje específico para BadHttpRequestException
+            string errorMessage = exception.Message;
+            if (exception is Microsoft.AspNetCore.Server.Kestrel.Core.BadHttpRequestException badRequestEx)
+            {
+                if (badRequestEx.Message.Contains("Unexpected end of request content") || 
+                    badRequestEx.Message.Contains("Request body too large") ||
+                    badRequestEx.Message.Contains("Invalid request"))
+                {
+                    errorMessage = "La solicitud está incompleta o mal formada. Por favor, verifique que el contenido JSON esté completo.";
+                }
+            }
 
             var response = new
             {
                 success = false,
                 message = statusCode == HttpStatusCode.InternalServerError
                     ? "Ha ocurrido un error interno del servidor"
-                    : exception.Message,
+                    : errorMessage,
                 errorId = errorId,
                 timestamp = DateTime.UtcNow
             };
