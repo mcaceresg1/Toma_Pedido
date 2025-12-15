@@ -159,7 +159,7 @@ set "BACKEND_SCRIPT=%TEMP%\toma-pedido-backend-start.bat"
 set "FRONTEND_SCRIPT=%TEMP%\toma-pedido-frontend-start.bat"
 
 echo  %BACKEND_SCRIPT%
-pause
+
 
 REM Script Backend
 (
@@ -178,7 +178,7 @@ REM Script Backend
     echo dotnet run
 ) > "%BACKEND_SCRIPT%"
 
-REM Script Frontend
+REM Script Frontend - Ejecutar directamente ng serve manteniendo el título
 (
     echo @echo off
     echo title Frontend - Toma Pedido
@@ -191,8 +191,13 @@ REM Script Frontend
     echo echo.
     echo echo URL: http://localhost:4200
     echo echo.
+    echo REM Ejecutar ng serve y mantener el título
+    echo start "ng-serve-process" /b cmd /c "call npm start"
+    echo REM Mantener el título de esta ventana
+    echo :keepTitle
     echo title Frontend - Toma Pedido
-    echo call npm start
+    echo timeout /t 1 /nobreak ^>nul
+    echo goto keepTitle
 ) > "%FRONTEND_SCRIPT%"
 
 echo Scripts creados

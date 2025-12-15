@@ -119,8 +119,8 @@ export class UpdatePedidoComponent implements OnInit, OnDestroy {
         for (let producto of resp) {
           const igv = producto.monto - producto.monto * 0.18;
           const nuevoItem: ProductoAgregado = {
-            codProducto: producto.codProducto,
-            descProducto: producto.descripcion,
+            codProducto: String(producto.codProducto || ''), // Convertir explícitamente a string
+            descProducto: String(producto.descripcion || ''),
             precio: igv,
             cantidad: producto.cantidad,
             importe: producto.monto,
@@ -283,32 +283,80 @@ export class UpdatePedidoComponent implements OnInit, OnDestroy {
   }
 
   savePedido(): void {
+    // Validar que haya productos
+    if (this.listProductosAgregados.length === 0) {
+      this.spinner.hide();
+      Swal.fire({
+        title: 'Error de validación',
+        text: 'Debe agregar al menos un producto al pedido.',
+        icon: 'error',
+        confirmButtonColor: '#17a2b8',
+        confirmButtonText: 'Ok',
+      });
+      return;
+    }
+
+    // Validar que todos los productos tengan cantidad válida
+    const productosInvalidos = this.listProductosAgregados.filter(
+      (item) => !item.cantidad || item.cantidad <= 0 || isNaN(item.cantidad)
+    );
+    if (productosInvalidos.length > 0) {
+      this.spinner.hide();
+      Swal.fire({
+        title: 'Error de validación',
+        text: 'Todos los productos deben tener una cantidad válida mayor a cero.',
+        icon: 'error',
+        confirmButtonColor: '#17a2b8',
+        confirmButtonText: 'Ok',
+      });
+      return;
+    }
+
     this.spinner.show();
 
     const productos: ProductoNuevoPedido[] = this.listProductosAgregados.map(
       (item, index) => {
+        const cantidad = item.cantidad || 1; // Evitar división por cero
         return {
-          codProd: item.codProducto,
-          cantProd: item.cantidad,
-          preUnit: item.precio / item.cantidad, // precio unitario sin igv
-          igv: item.igv,
-          preTot: item.precio, // precio total sin igv
+          codProd: String(item.codProducto || ''), // Convertir explícitamente a string
+          cantProd: cantidad,
+          preUnit: cantidad > 0 ? item.precio / cantidad : 0, // precio unitario sin igv
+          igv: item.igv || 0,
+          preTot: item.precio || 0, // precio total sin igv
           numSec: index + 1,
-          impUnit: item.importe / item.cantidad, // precio unitario con Igv
-          impTot: item.importe, // precio total con Igv
-          almacen: item.almacen,
-          descripcion: item.descProducto,
+          impUnit: cantidad > 0 ? item.importe / cantidad : 0, // precio unitario con Igv
+          impTot: item.importe || 0, // precio total con Igv
+          almacen: Number(item.almacen || 0), // Asegurar que sea número
+          descripcion: String(item.descProducto || ''), // Asegurar que sea string
         };
       }
     );
 
+    const subtotal = this.calcularSubtotal();
+    const igv = this.calcularIgv();
+    const total = this.calcularTotal();
+
+    // Validar que los valores sean números válidos
+    if (isNaN(subtotal) || isNaN(igv) || isNaN(total) || 
+        !isFinite(subtotal) || !isFinite(igv) || !isFinite(total)) {
+      this.spinner.hide();
+      Swal.fire({
+        title: 'Error de validación',
+        text: 'Los valores calculados no son válidos. Por favor, verifique los productos agregados.',
+        icon: 'error',
+        confirmButtonColor: '#17a2b8',
+        confirmButtonText: 'Ok',
+      });
+      return;
+    }
+
     const data: ActualizarPedido = {
-      subtotal: parseFloat(this.calcularSubtotal().toFixed(9)),
-      igv: parseFloat(this.calcularIgv().toFixed(9)),
-      total: parseFloat(this.calcularTotal().toFixed(9)),
+      subtotal: parseFloat(subtotal.toFixed(9)),
+      igv: parseFloat(igv.toFixed(9)),
+      total: parseFloat(total.toFixed(9)),
       productos,
-      observaciones: this.formPedido.get('observaciones')?.value,
-      oc: this.formPedido.get('oc')?.value,
+      observaciones: this.formPedido.get('observaciones')?.value || null,
+      oc: this.formPedido.get('oc')?.value || null,
     };
 
     this.pedidos.updatePedido(this.numPedido, data).subscribe({
@@ -345,8 +393,75 @@ export class UpdatePedidoComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.spinner.hide();
-        this._snackBar.open('Ocurrió un error al guardar el pedido...', 'OK', {
-          duration: 3000,
+        
+        // Mostrar errores de validación específicos si están disponibles
+        let mensajeError = 'Ocurrió un error al actualizar el pedido.';
+        
+        console.log('Error completo:', err);
+        console.log('err.error:', err.error);
+        
+        if (err.error) {
+          // Manejar errores de validación de ModelState (estructura: { ok: false, message: "...", errors: [{ field: "...", errors: [...] }] })
+          if (err.error.errors && Array.isArray(err.error.errors)) {
+            const errores: string[] = [];
+            
+            err.error.errors.forEach((e: any) => {
+              // Manejar estructura: { field: "...", errors: [...] }
+              if (e.errors && Array.isArray(e.errors)) {
+                const campo = (e.field || e.Field || '') as string;
+                e.errors.forEach((mensaje: string) => {
+                  if (campo) {
+                    errores.push(`${campo}: ${mensaje}`);
+                  } else {
+                    errores.push(mensaje);
+                  }
+                });
+              }
+              // Manejar estructura alternativa: { Field: "...", Errors: [...] }
+              else if (e.Errors && Array.isArray(e.Errors)) {
+                const campo = (e.Field || e.field || '') as string;
+                e.Errors.forEach((mensaje: string) => {
+                  if (campo) {
+                    errores.push(`${campo}: ${mensaje}`);
+                  } else {
+                    errores.push(mensaje);
+                  }
+                });
+              }
+              // Si tiene ErrorMessage directo
+              else if (typeof e.ErrorMessage === 'string') {
+                errores.push(e.ErrorMessage);
+              }
+              // Si es un string directo
+              else if (typeof e === 'string') {
+                errores.push(e);
+              }
+            });
+            
+            if (errores.length > 0) {
+              mensajeError = errores.join('\n');
+            }
+          }
+          // Manejar mensaje directo del backend
+          else if (err.error.message && typeof err.error.message === 'string') {
+            mensajeError = err.error.message;
+            // Si hay detalle adicional, agregarlo
+            if (err.error.error && typeof err.error.error === 'string') {
+              mensajeError += `\n${err.error.error}`;
+            }
+          }
+          // Si el error es directamente un string
+          else if (typeof err.error === 'string') {
+            mensajeError = err.error;
+          }
+        }
+
+        Swal.fire({
+          title: 'Error al actualizar pedido',
+          html: `<div style="font-size: calc(1em - 2px);">${mensajeError.replace(/\n/g, '<br>')}</div>`,
+          icon: 'error',
+          confirmButtonColor: '#17a2b8',
+          confirmButtonText: 'Ok',
         });
       },
     });

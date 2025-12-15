@@ -324,19 +324,76 @@
         {
             try
             {
+                // Validar el modelo
+                if (!ModelState.IsValid)
+                {
+                    var errors = ModelState
+                        .Where(e => e.Value?.Errors.Count > 0)
+                        .Select(e => new
+                        {
+                            Field = e.Key,
+                            Errors = e.Value?.Errors.Select(x => x.ErrorMessage).ToArray()
+                        })
+                        .ToList();
+
+                    _logger.LogWarning("UpdatePedido - Error de validación para operación {Operacion}. Errores: {Errors}", 
+                        operacion, System.Text.Json.JsonSerializer.Serialize(errors));
+
+                    return StatusCode(StatusCodes.Status400BadRequest, new
+                    {
+                        ok = false,
+                        message = "Error de validación",
+                        errors = errors
+                    });
+                }
+
+                // Validar que el pedido no sea null
+                if (pedido == null)
+                {
+                    _logger.LogWarning("UpdatePedido - Pedido es null para operación {Operacion}", operacion);
+                    return StatusCode(StatusCodes.Status400BadRequest, new
+                    {
+                        ok = false,
+                        message = "El pedido no puede ser nulo"
+                    });
+                }
+
                 var user = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
                 if (user == null) { return Unauthorized(); }
 
-                return StatusCode(StatusCodes.Status200OK, new
-                {
-                    ok = await _bcPedido.UpdatePedido(user, operacion, pedido),
-                    message = "Pedido creado correctamente"
-                });
+                _logger.LogInformation("UpdatePedido - Usuario: {User}, Operación: {Operacion}, Total: {Total}, Productos: {CantidadProductos}", 
+                    user, operacion, pedido.Total, pedido.Productos?.Count ?? 0);
 
+                var resultado = await _bcPedido.UpdatePedido(user, operacion, pedido);
+
+                if (resultado)
+                {
+                    _logger.LogInformation("UpdatePedido - Pedido actualizado exitosamente. Usuario: {User}, Operación: {Operacion}", user, operacion);
+                    return StatusCode(StatusCodes.Status200OK, new
+                    {
+                        ok = true,
+                        message = "Pedido actualizado correctamente"
+                    });
+                }
+                else
+                {
+                    _logger.LogWarning("UpdatePedido - No se pudo actualizar el pedido. Usuario: {User}, Operación: {Operacion}", user, operacion);
+                    return StatusCode(StatusCodes.Status400BadRequest, new
+                    {
+                        ok = false,
+                        message = "No se pudo actualizar el pedido"
+                    });
+                }
             }
             catch (Exception ex)
             {
-                throw new Exception(ex.Message, ex);
+                _logger.LogError(ex, "UpdatePedido - Error al actualizar pedido. Operación: {Operacion}", operacion);
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    ok = false,
+                    message = "Error interno del servidor al actualizar el pedido",
+                    error = ex.Message
+                });
             }
         }
 
