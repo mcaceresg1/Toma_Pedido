@@ -3,6 +3,7 @@ namespace ApiRoy.ResourceAccess
     using ApiRoy.Contracts;
     using ApiRoy.Models;
     using ApiRoy.ResourceAccess.Database;
+    using ApiRoy.Utils;
     using System.Data;
 
     public class DbLogin : IDbLogin
@@ -44,22 +45,23 @@ namespace ApiRoy.ResourceAccess
                 EcLoginResult? GetItem(DataRow r)
                 {
                     // Log detallado de lo que devuelve el stored procedure
-                    var response = Convert.ToInt32(r["RESPONSE"]);
+                    var response = r.GetInt("RESPONSE");
                     _logger.LogDebug("[DbLogin.GetItem] RESPONSE recibido: {Response}", response);
                     _logger.LogDebug("[DbLogin.GetItem] EMPRESA: {Empresa}, VENDEDOR: {Vendedor}, ID: {Id}", 
-                        r["EMPRESA"]?.ToString() ?? "NULL", 
-                        r["VENDEDOR"]?.ToString() ?? "NULL", 
-                        r["ID"]?.ToString() ?? "NULL");
+                        r.IsNull("EMPRESA") ? "NULL" : r["EMPRESA"]?.ToString(),
+                        r.IsNull("VENDEDOR") ? "NULL" : r["VENDEDOR"]?.ToString(),
+                        r.IsNull("ID") ? "NULL" : r["ID"]?.ToString());
                     
                     if (response == 1)
                     {
                         return new EcLoginResult()
                         {
-                            Empresa = r["EMPRESA"]?.ToString(),
+                            Empresa = r.IsNull("EMPRESA") ? null : r["EMPRESA"]?.ToString(),
                             Response = response,
-                            Empresas = Convert.ToString(r["EMPRESAS"]),
-                            Vendedor = Convert.ToInt32(r["VENDEDOR"]),
-                            Id = Convert.ToInt32(r["ID"]),
+                            Empresas = r.IsNull("EMPRESAS") ? null : r["EMPRESAS"]?.ToString(),
+                            // Algunos usuarios pueden venir con VENDEDOR/ID en NULL; evitar 500 y defaultear a 0
+                            Vendedor = r.GetInt("VENDEDOR"),
+                            Id = r.GetInt("ID"),
                         };
                     }
                     else
