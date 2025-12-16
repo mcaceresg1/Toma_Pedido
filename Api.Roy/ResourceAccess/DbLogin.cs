@@ -86,6 +86,48 @@ namespace ApiRoy.ResourceAccess
                     return Task.FromResult<EcLoginResult?>(null);
                 }
                 
+                // === NUEVO: Obtener permisos desde SUP011 ===
+                try 
+                {
+                    string? GetPermisoItem(DataRow r)
+                    {
+                        return r["OPCION"]?.ToString();
+                    }
+                    
+                    // Usar la empresa por defecto del usuario o '01' si es nula
+                    var empresaPermisos = result[0].Empresa ?? "01";
+                    
+                    var paramsPermisos = new List<DbParametro>
+                    {
+                        new DbParametro("@USUARIO", SqlDbType.VarChar, ParameterDirection.Input, ecLogin.Usuario),
+                        new DbParametro("@EMPRESA", SqlDbType.VarChar, ParameterDirection.Input, empresaPermisos)
+                    };
+                    
+                    Func<DataRow, string?> GetPermisoItemDelegate = GetPermisoItem;
+                    
+                    // Llamar al SP nuevo
+                    var permisos = db.ObtieneLista("NX_SEGURIDAD_WEB_GET_PERMISOS", GetPermisoItemDelegate, paramsPermisos);
+                    
+                    // Asignar al resultado, filtrando nulos
+                    if (permisos != null)
+                    {
+                        result[0].Permisos = permisos.Where(p => p != null).Cast<string>().ToList();
+                        _logger.LogInformation("[DbLogin.Login] Permisos obtenidos para {Usuario}: {Count}", ecLogin.Usuario, result[0].Permisos?.Count);
+                    }
+                    else
+                    {
+                        result[0].Permisos = new List<string>();
+                        _logger.LogWarning("[DbLogin.Login] No se obtuvieron permisos para {Usuario}", ecLogin.Usuario);
+                    }
+                }
+                catch (Exception exPermisos)
+                {
+                    _logger.LogError(exPermisos, "Error al obtener permisos para usuario {Usuario}", ecLogin.Usuario);
+                    // No fallar el login completo, solo dejar permisos vacíos
+                    result[0].Permisos = new List<string>();
+                }
+                // ===========================================
+                
                 _logger.LogInformation("[DbLogin.Login] Login exitoso para usuario: {Usuario}, Response: {Response}", ecLogin.Usuario, result[0]?.Response);
                 return Task.FromResult<EcLoginResult?>(result[0]);
 

@@ -28,7 +28,7 @@
       <nav class="sidebar-nav">
         <ul class="menu-list">
           <!-- INICIO -->
-          <li class="menu-item" *ngIf="getPermisos('Ventas')">
+          <li class="menu-item" *ngIf="getPermisos('Home')">
             <a class="menu-item-content" [routerLink]="['/home']" routerLinkActive="active">
               <mat-icon class="menu-icon">home</mat-icon>
               <span class="menu-text">Home</span>
@@ -53,7 +53,7 @@
           </li>
 
           <!-- REPORTE VENTAS CON SUBMENÚ -->
-          <li class="menu-item has-submenu" [class.expanded]="reporteVentasExpanded" *ngIf="getPermisos('Ventas')">
+          <li class="menu-item has-submenu" [class.expanded]="reporteVentasExpanded" *ngIf="getPermisos('ReporteVentas')">
             <div class="menu-item-content" (click)="toggleReporteVentas()">
               <mat-icon class="menu-icon">assessment</mat-icon>
               <span class="menu-text">Reporte Ventas</span>

@@ -387,12 +387,13 @@
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "UpdatePedido - Error al actualizar pedido. Operación: {Operacion}", operacion);
+                var errorId = Guid.NewGuid().ToString();
+                _logger.LogError(ex, "UpdatePedido - Error al actualizar pedido. Operación: {Operacion}. ErrorId: {ErrorId}", operacion, errorId);
                 return StatusCode(StatusCodes.Status500InternalServerError, new
                 {
                     ok = false,
-                    message = "Error interno del servidor al actualizar el pedido",
-                    error = ex.Message
+                    message = "Ha ocurrido un error interno del servidor",
+                    errorId = errorId
                 });
             }
         }
@@ -464,6 +465,7 @@
             }
         }
 
+        [Authorize]
         [HttpGet("GetVendedores")]
         public async Task<IActionResult> GetVendedores()
         {

@@ -130,7 +130,12 @@ namespace ApiRoy.Controllers
                     return BadRequest(new { message = "Usuario o contraseña no válidos" });
                 }
                 
-                var token = GenerateToken(ecLogin);
+                // Determinar rol basado en si es Vendedor o no
+                // Si Vendedor es 0, asumimos que es un usuario Administrativo/Interno
+                // Si Vendedor > 0, es un Tomapedidos
+                string role = resultLogin.Vendedor == 0 ? "Administrador" : "Tomapedidos";
+                
+                var token = GenerateToken(ecLogin, role);
                 _logger.LogInformation("Login exitoso para usuario: {Usuario}", ecLogin.Usuario);
                 
                 // Registrar empresas del usuario después del login exitoso
@@ -187,11 +192,12 @@ namespace ApiRoy.Controllers
             }
         }
 
-        private string GenerateToken(EcLogin p)
+        private string GenerateToken(EcLogin p, string role)
         {
             var claims = new[]
             {
-                new Claim(ClaimTypes.Name, p.Usuario)
+                new Claim(ClaimTypes.Name, p.Usuario),
+                new Claim(ClaimTypes.Role, role)
             };
             var secretKey = _config.GetSection("JWT:SECRET_KEY").Value ?? throw new InvalidOperationException("JWT Secret Key no configurada");
             

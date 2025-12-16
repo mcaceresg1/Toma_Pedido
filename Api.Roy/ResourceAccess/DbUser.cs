@@ -5,6 +5,7 @@ namespace ApiRoy.ResourceAccess
     using ApiRoy.Models;
     using ApiRoy.ResourceAccess.Database;
     using System.Data;
+    using System.Linq;
     using System.Text.RegularExpressions;
 
     public class DbUser : IDbUser
@@ -64,6 +65,36 @@ namespace ApiRoy.ResourceAccess
                 {
                     return Task.FromResult<EcUsuario?>(null);
                 }
+
+                // === NUEVO: Obtener permisos WEB desde SUP011 (VE/RV/RC/MV) ===
+                try
+                {
+                    string GetPermisoItem(DataRow r)
+                    {
+                        return r["OPCION"]?.ToString() ?? string.Empty;
+                    }
+
+                    var empresaPermisos = result[0].EmpresaDefecto ?? "01";
+                    var paramsPermisos = new List<DbParametro>
+                    {
+                        new DbParametro("@USUARIO", SqlDbType.VarChar, ParameterDirection.Input, user),
+                        new DbParametro("@EMPRESA", SqlDbType.VarChar, ParameterDirection.Input, empresaPermisos)
+                    };
+
+                    var permisos = db.ObtieneLista("NX_SEGURIDAD_WEB_GET_PERMISOS", GetPermisoItem, paramsPermisos);
+                    result[0].Permisos = (permisos ?? new List<string>())
+                        .Where(p => !string.IsNullOrWhiteSpace(p))
+                        .Select(p => p.Trim())
+                        .Distinct()
+                        .ToList();
+                }
+                catch
+                {
+                    // No fallar el GetUser por permisos; dejar vacío
+                    result[0].Permisos = new List<string>();
+                }
+                // ============================================================
+
                 return Task.FromResult<EcUsuario?>(result[0]);
 
             }

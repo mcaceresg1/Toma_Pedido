@@ -17,7 +17,7 @@ namespace ApiRoy.Controllers
             _bcZona = bcZona;
         }
 
-        [Authorize]
+        [Authorize(Roles = "Administrador")]
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -35,7 +35,7 @@ namespace ApiRoy.Controllers
             }
         }
 
-        [Authorize]
+        [Authorize(Roles = "Administrador")]
         [HttpGet("{zonaCodigo}")]
         public async Task<IActionResult> GetByCodigo(string zonaCodigo)
         {
@@ -55,7 +55,7 @@ namespace ApiRoy.Controllers
             }
         }
 
-        [Authorize]
+        [Authorize(Roles = "Administrador")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] EcZonaCreateDto zona)
         {
@@ -77,7 +77,7 @@ namespace ApiRoy.Controllers
             }
         }
 
-        [Authorize]
+        [Authorize(Roles = "Administrador")]
         [HttpPut("{zonaCodigo}")]
         public async Task<IActionResult> Update(string zonaCodigo, [FromBody] EcZonaUpdateDto zona)
         {
@@ -99,7 +99,7 @@ namespace ApiRoy.Controllers
             }
         }
 
-        [Authorize]
+        [Authorize(Roles = "Administrador")]
         [HttpDelete("{zonaCodigo}")]
         public async Task<IActionResult> Delete(string zonaCodigo)
         {

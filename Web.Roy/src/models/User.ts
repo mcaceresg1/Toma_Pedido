@@ -8,4 +8,5 @@ export type Usuario = {
   editaPrecio: boolean;
   funcionesEspeciales: boolean;
   preciosPermitidos: string;
+  permisos?: string[];
 };

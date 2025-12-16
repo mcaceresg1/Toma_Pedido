@@ -7,5 +7,6 @@
         public string? Empresa { get; set; }
         public int Vendedor { get; set; }
         public int Id { get; set; }
+        public List<string>? Permisos { get; set; }
     }
 }

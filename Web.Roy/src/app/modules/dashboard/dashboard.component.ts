@@ -12,17 +12,12 @@ import { MatListModule } from '@angular/material/list';
 import { MatButtonModule } from '@angular/material/button';
 import { environment } from '../../../environments/environment';
 import { Empresa } from '../../../models/Empresa';
+import { CookieService } from 'ngx-cookie-service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { UserService } from './services/user.service';
 import { AuthService } from '../auth/services/auth.service';
 import { Usuario } from '../../../models/User';
 import { NgxSpinnerModule, NgxSpinnerService } from 'ngx-spinner';
-
-interface Rol {
-  idRol: number;
-  nameRol: string;
-  pantallas: string[];
-}
 
 @Component({
   selector: 'app-dashboard',
@@ -55,32 +50,20 @@ export class DashboardComponent implements OnInit {
   _snackbar = inject(MatSnackBar);
   mostrarImpuesto = signal<boolean>(false);
   appVersion: string = '2.2.2';
-  
+
   // Estados de expansión de menús
   ventasExpanded: boolean = false;
   reporteVentasExpanded: boolean = false;
   reporteComprasExpanded: boolean = false;
   mantenimientoExpanded: boolean = false;
 
-  roles: Rol[] = [
-    {
-      idRol: 0,
-      nameRol: 'Tomapedidos',
-      pantallas: ['Home', 'Ventas'],
-    },
-    {
-      idRol: 4,
-      nameRol: 'Administrador',
-      pantallas: ['Home', 'GestionVentas'],
-    },
-  ];
-
   constructor(
     private userService: UserService,
     private authService: AuthService,
     private spinner: NgxSpinnerService,
-    private router: Router
-  ) {}
+    private router: Router,
+    private cookie: CookieService
+  ) { }
 
   toggleDrawer() {
     this.opened = !this.opened;
@@ -100,8 +83,7 @@ export class DashboardComponent implements OnInit {
       next: (resp) => {
         this.usuario.set(resp);
         this.logoEmpresa.set(
-          `${environment.api.replace('/api/', '/public/')}${
-            resp.empresaDefecto
+          `${environment.api.replace('/api/', '/public/')}${resp.empresaDefecto
           }.png`
         );
         this.spinner.hide('usuario');
@@ -123,9 +105,8 @@ export class DashboardComponent implements OnInit {
         this.userEmpresas.set(
           resp.map((it) => ({
             ...it,
-            logo: `${environment.api.replace('/api/', '/public/')}${
-              it.codigo
-            }.png`,
+            logo: `${environment.api.replace('/api/', '/public/')}${it.codigo
+              }.png`,
           }))
         );
         this.spinner.hide('empresas');
@@ -166,7 +147,6 @@ export class DashboardComponent implements OnInit {
         this.spinner.hide();
       },
       error: (err) => {
-        console.log(err);
         Swal.fire({
           title: 'Error al cambiar de empresa.',
           icon: 'error',
@@ -181,32 +161,29 @@ export class DashboardComponent implements OnInit {
   getConnectionDetails(): void {
     this.userService.getConnectionDetails().subscribe({
       next: (resp) => {
-      this.connectionDetails.set(resp);
+        this.connectionDetails.set(resp);
       },
       error: (err) => {
-        console.error('Error al obtener detalles de conexión:', err);
         this.connectionDetails.set('Error al obtener información de BD');
       }
     });
   }
 
   getPermisos(pantalla: string): boolean {
-    // const idRolUsuario = Number(this.cookie.get('userRol'));
+    const permisos = this.usuario()?.permisos || [];
 
-    // // Busca el rol en la lista de roles
-    // const rol = this.roles.find((r) => r.idRol === idRolUsuario);
-
-    // // Verifica si el rol existe y si la pantalla está en la lista de pantallas permitidas
-    // return rol !== undefined && rol.pantallas.includes(pantalla);
-    return true;
+    switch (pantalla) {
+      case 'Home': return true;
+      case 'Ventas': return permisos.includes('VE');
+      case 'ReporteVentas': return permisos.includes('RV');
+      case 'Reportes': return permisos.includes('RC'); // Reporte Compras
+      case 'Mantenimiento': return permisos.includes('MV');
+      default: return false;
+    }
   }
 
   navegarA(ruta: string): void {
-    console.log('>>> navegarA llamado con ruta:', ruta);
-    this.router.navigate([ruta]).then(
-      (success) => console.log('>>> Navegación exitosa:', success),
-      (error) => console.error('>>> Error en navegación:', error)
-    );
+    this.router.navigate([ruta]);
     // Cerrar menú en móvil después de navegar
     if (this.isSmallScreen) {
       this.opened = false;
@@ -229,23 +206,6 @@ export class DashboardComponent implements OnInit {
     this.mantenimientoExpanded = !this.mantenimientoExpanded;
   }
 
-  // getPermisos(menu: string) {
-  //   let permiso = false;
-  //   let userRol = Number(this.cookie.get('userRol'))
-
-  //   switch (menu) {
-  //     case "GestionVentas":
-  //       if (userRol == 4) //ADMIN
-  //       {
-  //         permiso = true;
-  //       } else {
-  //         permiso = false;
-  //       }
-  //       break;
-  //   }
-  //   return permiso;
-  // }
-
   logout($event?: Event) {
     // Prevenir propagación de eventos si se proporciona
     if ($event) {
@@ -253,7 +213,7 @@ export class DashboardComponent implements OnInit {
       $event.stopPropagation();
       $event.stopImmediatePropagation();
     }
-    
+
     // Usar setTimeout para evitar conflictos con mat-menu
     setTimeout(() => {
       Swal.fire({

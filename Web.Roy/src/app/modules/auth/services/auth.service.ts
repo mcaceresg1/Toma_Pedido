@@ -14,7 +14,7 @@ export class AuthService {
     private http: HttpClient,
     private router: Router,
     private cookieService: CookieService
-  ) {}
+  ) { }
 
   sendCredentials(usuario: string, clave: string): Observable<any> {
     const body = {
@@ -32,9 +32,6 @@ export class AuthService {
   }
 
   logout() {
-    console.log('=== INICIANDO LOGOUT ===');
-    console.log('Cookies antes de eliminar:', this.cookieService.getAll());
-    
     // Eliminar cookies sin especificar path (usa el path por defecto)
     this.cookieService.delete('token');
     this.cookieService.delete('userRol');
@@ -42,7 +39,7 @@ export class AuthService {
     this.cookieService.delete('userData');
     this.cookieService.delete('codVendedor');
     this.cookieService.delete('test');
-    
+
     // También intentar eliminar con path '/' por si acaso
     this.cookieService.delete('token', '/');
     this.cookieService.delete('userRol', '/');
@@ -50,14 +47,12 @@ export class AuthService {
     this.cookieService.delete('userData', '/');
     this.cookieService.delete('codVendedor', '/');
     this.cookieService.delete('test', '/');
-    
+
     // Limpiar localStorage por si se usa
     localStorage.clear();
     sessionStorage.clear();
-    
-    console.log('Cookies después de eliminar:', this.cookieService.getAll());
-    console.log('=== LOGOUT COMPLETADO - Redirigiendo a auth ===');
-    
+
+
     // Usar window.location.href para forzar una navegación completa y evitar problemas con el router
     // Esto evita que los guards o interceptores interfieran con la navegación
     window.location.href = '/auth';

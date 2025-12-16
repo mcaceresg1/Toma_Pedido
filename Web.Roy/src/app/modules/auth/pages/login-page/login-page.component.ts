@@ -98,10 +98,20 @@ export class LoginPageComponent implements OnInit {
     const { usuario, clave } = this.formLogin.value;
     this.authService.sendCredentials(usuario!, clave!).subscribe({
       next: (responseOk) => {
-        let tokenSession = responseOk.message;
+        const tokenSession = responseOk.message;
+        const user = responseOk.user;
         
-        this.cookie.set('token', tokenSession, 4);
-        this.cookie.set('userLogin', usuario!, 4);
+        // Determinar rol (0 = Admin, >0 = Tomapedidos)
+        // Guardamos el ID del rol para coincidir con la lógica del Dashboard (0 o 4 en el ejemplo comentado, pero usaremos lógica directa)
+        // En el dashboard.ts original: 4 = Admin, 0 = Tomapedidos.
+        // Pero en BD: 0 = Admin (Vendedor=0).
+        // Vamos a estandarizar: Si vendedor == 0 -> Rol "Admin", Si vendedor > 0 -> Rol "User"
+        
+        this.cookie.set('token', tokenSession, 4, '/');
+        this.cookie.set('userLogin', usuario!, 4, '/');
+        this.cookie.set('codVendedor', user.vendedor.toString(), 4, '/');
+        // Guardamos userRol: 4 si es Admin (vendedor 0), 0 si es Tomapedidos (para mantener compatibilidad con lo que parecía haber antes)
+        this.cookie.set('userRol', user.vendedor === 0 ? '4' : '0', 4, '/');
         
         this.router.navigate(['/', 'dashboard']);
         this.spinner.hide();

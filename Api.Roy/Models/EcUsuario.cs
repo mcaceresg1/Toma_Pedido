@@ -11,5 +11,6 @@
         public bool EditaPrecio { get; set; }
         public bool FuncionesEspeciales { get; set; }
         public string? PreciosPermitidos { get; set; }
+        public List<string>? Permisos { get; set; }
     }
 }

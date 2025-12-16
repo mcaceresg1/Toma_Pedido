@@ -13,7 +13,7 @@ import { Observable } from 'rxjs';
   providedIn: 'root',
 })
 export class DirectionLoginGuard implements CanActivate {
-  constructor(private cookieService: CookieService, private router: Router) {}
+  constructor(private cookieService: CookieService, private router: Router) { }
 
   canActivate(
     route: ActivatedRouteSnapshot,
@@ -24,13 +24,10 @@ export class DirectionLoginGuard implements CanActivate {
     | boolean
     | UrlTree {
     const hasToken = this.cookieService.check('token');
-    console.log('>>> DirectionLoginGuard - Token exists:', hasToken);
-    
+
     if (!hasToken) {
-      console.log('>>> DirectionLoginGuard - NO HAY TOKEN, permitiendo acceso a login');
       return true;
     } else {
-      console.log('>>> DirectionLoginGuard - HAY TOKEN, redirigiendo a dashboard');
       this.router.navigate(['/', 'dashboard']);
       return false;
     }
