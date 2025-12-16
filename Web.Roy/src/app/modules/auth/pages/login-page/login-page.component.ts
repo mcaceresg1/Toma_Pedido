@@ -113,7 +113,8 @@ export class LoginPageComponent implements OnInit {
         // Guardamos userRol: 4 si es Admin (vendedor 0), 0 si es Tomapedidos (para mantener compatibilidad con lo que parecía haber antes)
         this.cookie.set('userRol', user.vendedor === 0 ? '4' : '0', 4, '/');
         
-        this.router.navigate(['/', 'dashboard']);
+        // Luego del login, entrar directo a "Mis pedidos"
+        this.router.navigateByUrl('/dashboard/pages/ventas');
         this.spinner.hide();
       },
       error: (err) => {

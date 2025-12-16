@@ -16,12 +16,8 @@ export class HomePageComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    let idRolUsuario = Number(this.cookie.get('userRol'));
-
-    if (idRolUsuario == 4) {
-      this.router.navigateByUrl('/dashboard/reportes/gestionVentas');
-    } else {
-      this.router.navigateByUrl('/dashboard/pages/ventas');
-    }
+    // Esta página solo debe redirigir al listado de pedidos (Mis pedidos)
+    // Nota: ya no usamos Gestión de Ventas como landing.
+    this.router.navigateByUrl('/dashboard/pages/ventas');
   }
 }

@@ -48,8 +48,9 @@ const routes: Routes = [
         path: 'pages/clientes',
         component: ClientesComponent,
       },
-      { path: '', redirectTo: 'home', pathMatch: 'full' },
-      { path: '**', redirectTo: 'home' },
+      // Landing por defecto: Mis pedidos
+      { path: '', redirectTo: 'pages/ventas', pathMatch: 'full' },
+      { path: '**', redirectTo: 'pages/ventas' },
     ],
   },
 ];
