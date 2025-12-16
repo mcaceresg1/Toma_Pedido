@@ -6,6 +6,7 @@ namespace ApiRoy.Controllers
     using Microsoft.AspNetCore.Mvc;
     using System.Security.Claims;
 
+    [Authorize(Policy = "PermisoMV")]
     [ApiController]
     [Route("api/zonas")]
     public class ZonasController : Controller
@@ -17,7 +18,6 @@ namespace ApiRoy.Controllers
             _bcZona = bcZona;
         }
 
-        [Authorize(Roles = "Administrador")]
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -35,7 +35,6 @@ namespace ApiRoy.Controllers
             }
         }
 
-        [Authorize(Roles = "Administrador")]
         [HttpGet("{zonaCodigo}")]
         public async Task<IActionResult> GetByCodigo(string zonaCodigo)
         {
@@ -55,7 +54,6 @@ namespace ApiRoy.Controllers
             }
         }
 
-        [Authorize(Roles = "Administrador")]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] EcZonaCreateDto zona)
         {
@@ -77,7 +75,6 @@ namespace ApiRoy.Controllers
             }
         }
 
-        [Authorize(Roles = "Administrador")]
         [HttpPut("{zonaCodigo}")]
         public async Task<IActionResult> Update(string zonaCodigo, [FromBody] EcZonaUpdateDto zona)
         {
@@ -99,7 +96,6 @@ namespace ApiRoy.Controllers
             }
         }
 
-        [Authorize(Roles = "Administrador")]
         [HttpDelete("{zonaCodigo}")]
         public async Task<IActionResult> Delete(string zonaCodigo)
         {

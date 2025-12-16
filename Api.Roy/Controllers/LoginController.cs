@@ -135,7 +135,7 @@ namespace ApiRoy.Controllers
                 // Si Vendedor > 0, es un Tomapedidos
                 string role = resultLogin.Vendedor == 0 ? "Administrador" : "Tomapedidos";
                 
-                var token = GenerateToken(ecLogin, role);
+                var token = GenerateToken(ecLogin, role, resultLogin.Permisos);
                 _logger.LogInformation("Login exitoso para usuario: {Usuario}", ecLogin.Usuario);
                 
                 // Registrar empresas del usuario después del login exitoso
@@ -192,13 +192,25 @@ namespace ApiRoy.Controllers
             }
         }
 
-        private string GenerateToken(EcLogin p, string role)
+        private string GenerateToken(EcLogin p, string role, IEnumerable<string>? permisos)
         {
-            var claims = new[]
+            var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, p.Usuario),
                 new Claim(ClaimTypes.Role, role)
             };
+
+            // Permisos por usuario (SUP011): VE/RV/RC/MV
+            if (permisos != null)
+            {
+                foreach (var permiso in permisos
+                             .Where(p => !string.IsNullOrWhiteSpace(p))
+                             .Select(p => p.Trim())
+                             .Distinct(StringComparer.OrdinalIgnoreCase))
+                {
+                    claims.Add(new Claim("permiso", permiso.ToUpperInvariant()));
+                }
+            }
             var secretKey = _config.GetSection("JWT:SECRET_KEY").Value ?? throw new InvalidOperationException("JWT Secret Key no configurada");
             
             var keyBytes = Encoding.UTF8.GetBytes(secretKey);

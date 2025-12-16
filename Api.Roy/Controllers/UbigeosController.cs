@@ -35,7 +35,7 @@ namespace ApiRoy.Controllers
             }
         }
 
-        [Authorize]
+        [Authorize(Policy = "PermisoMV")]
         [HttpGet("zona/{zonaCodigo}")]
         public async Task<IActionResult> GetByZona(string zonaCodigo)
         {
@@ -53,7 +53,7 @@ namespace ApiRoy.Controllers
             }
         }
 
-        [Authorize]
+        [Authorize(Policy = "PermisoMV")]
         [HttpPost("zona/{zonaCodigo}")]
         public async Task<IActionResult> SetByZona(string zonaCodigo, [FromBody] List<string> ubigeos)
         {

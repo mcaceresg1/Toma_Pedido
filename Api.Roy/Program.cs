@@ -92,6 +92,17 @@ namespace ApiRoy
                     };
                 });
 
+            // Autorización por permisos (SUP011: VE/RV/RC/MV) enviados como claims en el JWT
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy("PermisoMV", policy =>
+                {
+                    policy.RequireAssertion(ctx =>
+                        ctx.User.HasClaim("permiso", "MV") ||
+                        ctx.User.IsInRole("Administrador"));
+                });
+            });
+
 
             builder.Services.AddControllers()
                 .AddJsonOptions(options =>
