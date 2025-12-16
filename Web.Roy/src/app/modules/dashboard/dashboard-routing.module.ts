@@ -48,9 +48,10 @@ const routes: Routes = [
         path: 'pages/clientes',
         component: ClientesComponent,
       },
-      // Landing por defecto: Mis pedidos
-      { path: '', redirectTo: 'pages/ventas', pathMatch: 'full' },
-      { path: '**', redirectTo: 'pages/ventas' },
+      // Landing por defecto: Home dinámico (decide según permisos)
+      { path: '', redirectTo: 'home', pathMatch: 'full' },
+      // Sin fallback a ventas: mantener en Home si la ruta no existe
+      { path: '**', redirectTo: 'home' },
     ],
   },
 ];
